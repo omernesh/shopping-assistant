@@ -64,9 +64,9 @@ FIELD_MAPS = {
         "unit_of_measure": "UnitOfMeasure", "update_date": "PriceUpdateDate", "is_weighted": "bIsWeighted",
     },
     "rami-levy": {
-        "item_code": "ItemCode", "item_name": "ItemNm", "manufacturer": "ManufacturerName",
+        "item_code": "ItemCode", "item_name": "ItemName", "manufacturer": "ManufactureName",
         "price": "ItemPrice", "unit_price": "UnitOfMeasurePrice", "quantity": "Quantity",
-        "unit_of_measure": "UnitOfMeasure", "update_date": "PriceUpdateDate", "is_weighted": "bIsWeighted",
+        "unit_of_measure": "UnitOfMeasure", "update_date": "PriceUpdateTime", "is_weighted": "bIsWeighted",
     },
 }
 
