@@ -58,6 +58,11 @@ FIELD_MAPS = {
         "price": "ItemPrice", "unit_price": "UnitOfMeasurePrice", "quantity": "Quantity",
         "unit_of_measure": "UnitOfMeasure", "update_date": "PriceUpdateDate", "is_weighted": "bIsWeighted",
     },
+    "carrefour": {
+        "item_code": "ItemCode", "item_name": "ItemName", "manufacturer": "ManufacturerName",
+        "price": "ItemPrice", "unit_price": "UnitOfMeasurePrice", "quantity": "Quantity",
+        "unit_of_measure": "UnitOfMeasure", "update_date": "PriceUpdateDate", "is_weighted": "bIsWeighted",
+    },
     "rami-levy": {
         "item_code": "ItemCode", "item_name": "ItemNm", "manufacturer": "ManufacturerName",
         "price": "ItemPrice", "unit_price": "UnitOfMeasurePrice", "quantity": "Quantity",
@@ -282,3 +287,10 @@ def format_feed_results(results: list[dict], query: str, limit: int = 5) -> str:
     lines.append("\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9 (\u05d7\u05d5\u05e7 \u05e9\u05e7\u05d9\u05e4\u05d5\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd)")
     return "\n".join(lines)
 
+
+
+CARREFOUR_CONFIG = {
+    "name": "קרפור",
+    "chain_id": "carrefour",
+    "site_url": "https://prices.carrefour.co.il",
+}

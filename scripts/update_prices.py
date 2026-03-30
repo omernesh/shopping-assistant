@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import gzip
 import logging
+import json
 import re
 import sys
 from pathlib import Path
@@ -68,6 +69,54 @@ def download_and_ingest(url: str, chain: str, db: PriceDB, session: requests.Ses
         return 0
 
 
+def fetch_carrefour_feeds(session: requests.Session, db: PriceDB, max_stores: int = 5) -> int:
+    """Download Carrefour price feeds by scraping their file listing page."""
+    logger.info("Fetching Carrefour feeds...")
+    try:
+        resp = session.get("https://prices.carrefour.co.il", timeout=30)
+        resp.raise_for_status()
+        html = resp.text
+
+        # Extract path and files JSON from the page
+        path_match = re.search(r"const path = '(\d+)'", html)
+        files_match = re.search(r"const files = (\[.*?\]);", html, re.DOTALL)
+        if not path_match or not files_match:
+            logger.error("Could not parse Carrefour file listing page")
+            return 0
+
+        path = path_match.group(1)
+        files = json.loads(files_match.group(1))
+
+        # Filter PriceFull files only
+        price_files = [f for f in files if f["name"].startswith("PriceFull")]
+        logger.info("Found %d PriceFull files for Carrefour", len(price_files))
+
+        # Download up to max_stores files (pick different store IDs)
+        seen_stores = set()
+        total = 0
+        for f in price_files:
+            name = f["name"]
+            # Extract store ID
+            parts = name.replace("PriceFull", "").split("-")
+            store_id = parts[1] if len(parts) > 1 else "unknown"
+            if store_id in seen_stores:
+                continue
+            seen_stores.add(store_id)
+
+            if len(seen_stores) > max_stores:
+                break
+
+            url = f"https://prices.carrefour.co.il/{path}/{name}"
+            count = download_and_ingest(url, "carrefour", db, session)
+            total += count
+
+        logger.info("Carrefour total: %d items from %d stores", total, len(seen_stores))
+        return total
+    except Exception as e:
+        logger.error("Carrefour feed fetch failed: %s", e)
+        return 0
+
+
 def main():
     db = PriceDB(PRICE_DB_PATH)
     db.initialize()
@@ -95,6 +144,10 @@ def main():
         for url in urls[:MAX_FILES_PER_CHAIN]:
             count = download_and_ingest(url, chain_key, db, session)
             total_items += count
+
+    # Carrefour (special handling - file list embedded in HTML)
+    carrefour_items = fetch_carrefour_feeds(session, db, max_stores=5)
+    total_items += carrefour_items
 
     db.rotate_if_needed(MAX_DB_SIZE)
 
