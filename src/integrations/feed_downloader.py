@@ -33,6 +33,9 @@ CREATE INDEX IF NOT EXISTS idx_products_item_name ON products(item_name);
 CREATE INDEX IF NOT EXISTS idx_products_item_code ON products(item_code);
 CREATE INDEX IF NOT EXISTS idx_products_chain ON products(chain);
 
+CREATE INDEX IF NOT EXISTS idx_products_name_chain_price ON products(item_name, chain, price);
+CREATE INDEX IF NOT EXISTS idx_products_code_chain ON products(item_code, chain);
+
 CREATE TABLE IF NOT EXISTS feed_metadata (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     chain TEXT NOT NULL,
@@ -226,15 +229,15 @@ class PriceDB:
         return len(rows)
 
     def find_matching_products(self, query: str, limit: int = 8) -> list[dict]:
-        """Find distinct products matching the query, returning one per product name."""
+        """Find distinct products matching the query."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
+            # Prefer starts-with match
             rows = conn.execute(
                 """
-                SELECT item_name, item_code, MIN(price) as price, manufacturer, chain
+                SELECT DISTINCT item_name, item_code, price, manufacturer, chain
                 FROM products
                 WHERE item_name LIKE ?
-                GROUP BY item_code
                 ORDER BY price ASC
                 LIMIT ?
                 """,
@@ -244,10 +247,9 @@ class PriceDB:
             if len(rows) < 2:
                 rows = conn.execute(
                     """
-                    SELECT item_name, item_code, MIN(price) as price, manufacturer, chain
+                    SELECT DISTINCT item_name, item_code, price, manufacturer, chain
                     FROM products
                     WHERE item_name LIKE ?
-                    GROUP BY item_code
                     ORDER BY price ASC
                     LIMIT ?
                     """,

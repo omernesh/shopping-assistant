@@ -100,6 +100,11 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         FOREIGN KEY(chat_id) REFERENCES chats(id)
     )
     """,
+    """CREATE INDEX IF NOT EXISTS idx_items_list_status ON list_items(list_id, status)""",
+    """CREATE INDEX IF NOT EXISTS idx_items_list_name ON list_items(list_id, status, normalized_name)""",
+    """CREATE INDEX IF NOT EXISTS idx_items_user ON list_items(list_id, status, added_by_user_id)""",
+    """CREATE INDEX IF NOT EXISTS idx_events_created ON events(created_at)""",
+    """CREATE INDEX IF NOT EXISTS idx_users_name ON users(chat_id, display_name)""",
 )
 
 

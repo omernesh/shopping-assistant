@@ -31,6 +31,13 @@ def main() -> None:
     price_db = PriceDB(price_db_path)
     price_db.initialize()
     price_service = PriceService(chp_client=chp_client, price_db=price_db)
+
+    # Update query planner statistics
+    import sqlite3 as _sqlite3
+    for _db_path in [settings.db_path, price_db_path]:
+        _conn = _sqlite3.connect(_db_path)
+        _conn.execute("ANALYZE")
+        _conn.close()
     router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db, price_service=price_service)
     price_db.rotate_if_needed(max_bytes=250 * 1024 * 1024)
     size_mb = price_db.get_db_size_bytes() / (1024 * 1024)
