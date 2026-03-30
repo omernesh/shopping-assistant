@@ -163,6 +163,7 @@ def main():
 
     db = PriceDB(PRICE_DB_PATH)
     db.initialize()
+# Rotate old prices (keep only last 7 days)    import sqlite3    with sqlite3.connect(str(PRICE_DB_PATH)) as conn:        deleted = conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount        if deleted:            conn.execute("VACUUM")            conn.commit()            logger.info("Rotated %d old price entries", deleted)
 
     chains = {args.chain: CHAINS[args.chain]} if args.chain else CHAINS
     total = 0

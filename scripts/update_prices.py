@@ -122,6 +122,7 @@ def main():
     db.initialize()
 
     db.rotate_if_needed(MAX_DB_SIZE)
+# Delete prices older than 7 days    import sqlite3 as _sql    with _sql.connect(str(PRICE_DB_PATH)) as _conn:        _del = _conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount        if _del:            _conn.execute("VACUUM")            _conn.commit()            logger.info("Rotated %d old price entries", _del)
 
     session = requests.Session()
     session.headers.update({
@@ -150,6 +151,7 @@ def main():
     total_items += carrefour_items
 
     db.rotate_if_needed(MAX_DB_SIZE)
+# Delete prices older than 7 days    import sqlite3 as _sql    with _sql.connect(str(PRICE_DB_PATH)) as _conn:        _del = _conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount        if _del:            _conn.execute("VACUUM")            _conn.commit()            logger.info("Rotated %d old price entries", _del)
 
     size_mb = db.get_db_size_bytes() / (1024 * 1024)
     logger.info("Price update complete. Total items: %d, DB size: %.1f MB", total_items, size_mb)
