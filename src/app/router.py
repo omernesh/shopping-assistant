@@ -15,6 +15,13 @@ from src.integrations.price_service import PriceService, format_list_estimate, f
 logger = logging.getLogger(__name__)
 
 
+def _fmt_qty(value: float | None) -> str | None:
+    """Format a quantity value for display (e.g., 2.0 -> '2', 1.5 -> '1.5')."""
+    if value is None:
+        return None
+    return str(int(value)) if value == int(value) else str(value)
+
+
 @dataclass(frozen=True)
 class MessageContext:
     platform: str
@@ -137,13 +144,17 @@ class ShoppingAssistantRouter:
     def merge_duplicate(self, *, item_id: int, additional_quantity: float) -> str:
         """Merge quantity into existing item."""
         item = self.store.merge_item_quantity(item_id=item_id, additional_quantity=additional_quantity)
-        q = int(item.quantity_value) if item.quantity_value and item.quantity_value.is_integer() else item.quantity_value
+        if item is None:
+            return "הפריט כבר לא קיים ברשימה"
+        q = _fmt_qty(item.quantity_value)
         return f"\u05de\u05d5\u05d6\u05d2: {item.normalized_name} (\u05e1\u05d4\"\u05db {q})"
 
     def update_duplicate(self, *, item_id: int, new_quantity: float) -> str:
         """Update existing item's quantity."""
         item = self.store.update_item_quantity(item_id=item_id, new_quantity=new_quantity)
-        q = int(item.quantity_value) if item.quantity_value and item.quantity_value.is_integer() else item.quantity_value
+        if item is None:
+            return "הפריט כבר לא קיים ברשימה"
+        q = _fmt_qty(item.quantity_value)
         return f"\u05e2\u05d5\u05d3\u05db\u05df: {item.normalized_name} (\u05db\u05de\u05d5\u05ea: {q})"
 
     def force_add_item(self, context: MessageContext, *, item_name: str, quantity: float | None = None, note: str = "") -> str:
@@ -314,7 +325,7 @@ class ShoppingAssistantRouter:
         if item.quantity_value is None:
             return item.normalized_name
 
-        quantity = int(item.quantity_value) if item.quantity_value.is_integer() else item.quantity_value
+        quantity = _fmt_qty(item.quantity_value)
         if item.quantity_unit:
             return f"{quantity} {item.quantity_unit} {item.normalized_name}".strip()
         return f"{quantity} {item.normalized_name}".strip()

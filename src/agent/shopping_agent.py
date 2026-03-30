@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Protocol
-
 from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
 from src.app.router import MessageContext, ShoppingAssistantRouter, DuplicateConflict
 
@@ -69,8 +67,9 @@ class ShoppingAgent:
                 })
             messages.append({"role": "user", "content": tool_results})
 
-        # If we exhaust rounds, return whatever text we have
-        return response.text.strip() if response.text else ""
+        # If we exhaust rounds, log and return a user-facing message
+        logger.warning("Tool loop exhausted %d rounds for message: %s", MAX_TOOL_ROUNDS, context.text[:100])
+        return response.text.strip() if response.text else "לא הצלחתי לעבד את הבקשה — נסה שוב"
 
     def _execute_tool(self, context: MessageContext, tool_call: ToolCall) -> str:
         name = tool_call.name
@@ -87,6 +86,9 @@ class ShoppingAgent:
                     quantity=args.get("quantity"),
                 )
                 if isinstance(result, DuplicateConflict):
+                    # Cap at 100 entries
+                    if len(self.pending_conflicts) > 100:
+                        self.pending_conflicts.clear()
                     self.pending_conflicts[context.external_chat_id] = result
                     existing = result.existing_item
                     eq = existing.quantity_value

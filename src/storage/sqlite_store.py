@@ -6,6 +6,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+def _escape_like(s: str) -> str:
+    """Escape LIKE metacharacters for safe use in SQLite LIKE patterns."""
+    return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 SCHEMA_STATEMENTS: tuple[str, ...] = (
     """
     CREATE TABLE IF NOT EXISTS chats (
@@ -305,11 +310,11 @@ class SQLiteStore:
                 """
                 SELECT *
                 FROM list_items
-                WHERE list_id = ? AND status = 'active' AND lower(normalized_name) LIKE ?
+                WHERE list_id = ? AND status = 'active' AND lower(normalized_name) LIKE ? ESCAPE '\\'
                 ORDER BY id ASC
                 LIMIT 1
                 """,
-                (list_id, f"%{normalized_query}%"),
+                (list_id, f"%{_escape_like(normalized_query)}%"),
             ).fetchone()
             if row is None:
                 return None
@@ -412,8 +417,8 @@ class SQLiteStore:
             # Look up user_id by display name
             with self.connect() as conn:
                 row = conn.execute(
-                    "SELECT user_id FROM users WHERE chat_id = ? AND lower(display_name) LIKE ?",
-                    (chat_id, f"%{user_name.lower()}%"),
+                    "SELECT user_id FROM users WHERE chat_id = ? AND lower(display_name) LIKE ? ESCAPE '\\'",
+                    (chat_id, f"%{_escape_like(user_name.lower())}%"),
                 ).fetchone()
             if row:
                 actual_user_id = row["user_id"]
@@ -444,14 +449,14 @@ class SQLiteStore:
                 SELECT *
                 FROM list_items
                 WHERE list_id = ? AND status = 'active'
-                  AND (lower(normalized_name) LIKE ? OR ? LIKE '%' || lower(normalized_name) || '%')
+                  AND (lower(normalized_name) LIKE ? ESCAPE '\\' OR ? LIKE '%' || lower(normalized_name) || '%')
                 ORDER BY id ASC
                 """,
-                (list_id, f"%{normalized_query}%", normalized_query),
+                (list_id, f"%{_escape_like(normalized_query)}%", normalized_query),
             ).fetchall()
         return [self._row_to_item(row) for row in rows]
 
-    def merge_item_quantity(self, *, item_id: int, additional_quantity: float) -> StoredItem:
+    def merge_item_quantity(self, *, item_id: int, additional_quantity: float) -> StoredItem | None:
         """Add quantity to an existing item."""
         with self.connect() as conn:
             conn.execute(
@@ -465,9 +470,11 @@ class SQLiteStore:
             )
             row = conn.execute("SELECT * FROM list_items WHERE id = ?", (item_id,)).fetchone()
             conn.commit()
+        if row is None:
+            return None
         return self._row_to_item(row)
 
-    def update_item_quantity(self, *, item_id: int, new_quantity: float) -> StoredItem:
+    def update_item_quantity(self, *, item_id: int, new_quantity: float) -> StoredItem | None:
         """Replace the quantity of an existing item."""
         with self.connect() as conn:
             conn.execute(
@@ -481,4 +488,6 @@ class SQLiteStore:
             )
             row = conn.execute("SELECT * FROM list_items WHERE id = ?", (item_id,)).fetchone()
             conn.commit()
+        if row is None:
+            return None
         return self._row_to_item(row)

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 import logging
 from dataclasses import dataclass, field
 
@@ -200,10 +199,15 @@ class LLMTransport:
             if block_type == "text":
                 result.text += block.get("text", "")
             elif block_type == "tool_use":
-                result.tool_calls.append(ToolCall(
-                    id=block["id"],
-                    name=block["name"],
-                    input=block.get("input", {}),
-                ))
+                tool_id = block.get("id", "")
+                tool_name = block.get("name", "")
+                if tool_id and tool_name:
+                    result.tool_calls.append(ToolCall(
+                        id=tool_id,
+                        name=tool_name,
+                        input=block.get("input", {}),
+                    ))
+                else:
+                    logger.warning("Malformed tool_use block (missing id or name): %s", block)
             # skip "thinking" blocks
         return result

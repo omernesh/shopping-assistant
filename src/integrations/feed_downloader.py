@@ -9,9 +9,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-import requests
-from requests.adapters import HTTPAdapter
-
 logger = logging.getLogger(__name__)
 
 PRICE_DB_SCHEMA = """
@@ -28,7 +25,8 @@ CREATE TABLE IF NOT EXISTS products (
     chain TEXT NOT NULL,
     store_id TEXT,
     update_date TEXT,
-    fetched_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    fetched_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(item_code, chain, store_id)
 );
 
 CREATE INDEX IF NOT EXISTS idx_products_item_name ON products(item_name);
@@ -186,7 +184,7 @@ class PriceDB:
 
         with sqlite3.connect(self.db_path) as conn:
             conn.executemany(
-                """INSERT INTO products (item_code, item_name, manufacturer, price, unit_price,
+                """INSERT OR REPLACE INTO products (item_code, item_name, manufacturer, price, unit_price,
                    quantity, unit_of_measure, is_weighted, chain, store_id, update_date)
                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                 rows,

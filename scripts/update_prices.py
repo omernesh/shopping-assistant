@@ -50,7 +50,7 @@ def fetch_feed_index(chain_config: dict, session: requests.Session) -> list[str]
 def download_and_ingest(url: str, chain: str, db: PriceDB, session: requests.Session) -> int:
     """Download a single feed file and ingest it into the price DB."""
     try:
-        resp = session.get(url, timeout=60, stream=True)
+        resp = session.get(url, timeout=60)
         resp.raise_for_status()
         raw = resp.content
 

@@ -9,6 +9,41 @@ from typing import Any
 
 import requests
 
+import time as _time
+
+
+class TTLDict:
+    """Simple dict with automatic expiry of old entries."""
+    def __init__(self, ttl_seconds: int = 600, max_size: int = 200):
+        self._data: dict[str, tuple[float, Any]] = {}
+        self._ttl = ttl_seconds
+        self._max_size = max_size
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self._evict()
+        self._data[key] = (_time.time(), value)
+
+    def pop(self, key: str, default: Any = None) -> Any:
+        entry = self._data.pop(key, None)
+        if entry is None:
+            return default
+        ts, value = entry
+        if _time.time() - ts > self._ttl:
+            return default
+        return value
+
+    def _evict(self) -> None:
+        now = _time.time()
+        # Remove expired
+        expired = [k for k, (ts, _) in self._data.items() if now - ts > self._ttl]
+        for k in expired:
+            del self._data[k]
+        # Enforce max size (remove oldest)
+        while len(self._data) >= self._max_size:
+            oldest = min(self._data, key=lambda k: self._data[k][0])
+            del self._data[oldest]
+
+
 from src.agent.shopping_agent import ShoppingAgent
 from src.channels.telegram_bot import TelegramBotAdapter
 
@@ -58,7 +93,7 @@ class TelegramPollingBot:
         self.adapter = TelegramBotAdapter()
         self.base_url = f"https://api.telegram.org/bot{token}"
         self.session = requests.Session()
-        self.pending_conflicts: dict[str, Any] = {}  # conflict_id -> DuplicateConflict
+        self.pending_conflicts: TTLDict = TTLDict(ttl_seconds=600, max_size=200)
 
     def get_me(self) -> dict[str, Any]:
         response = self.session.get(f"{self.base_url}/getMe", timeout=15)
@@ -79,20 +114,26 @@ class TelegramPollingBot:
 
     def poll_forever(self) -> None:
         offset: int | None = None
+        consecutive_failures = 0
         logger.info("Starting Telegram polling loop")
 
         while True:
             try:
                 updates = self.get_updates(offset=offset)
+                consecutive_failures = 0  # Reset on success
                 for update in updates:
                     offset = update.update_id + 1
                     self.handle_update(update.payload)
             except requests.RequestException as exc:
-                logger.exception("Telegram polling request failed: %s", exc)
-                time.sleep(3)
+                consecutive_failures += 1
+                backoff = min(3 * (2 ** min(consecutive_failures - 1, 5)), 120)
+                logger.exception("Telegram polling failed (attempt %d, backoff %ds): %s", consecutive_failures, backoff, exc)
+                time.sleep(backoff)
             except Exception as exc:  # noqa: BLE001
-                logger.exception("Unexpected polling failure: %s", exc)
-                time.sleep(3)
+                consecutive_failures += 1
+                backoff = min(3 * (2 ** min(consecutive_failures - 1, 5)), 120)
+                logger.exception("Unexpected polling failure (attempt %d, backoff %ds): %s", consecutive_failures, backoff, exc)
+                time.sleep(backoff)
 
     def get_updates(self, offset: int | None = None) -> list[TelegramUpdate]:
         response = self.session.get(
@@ -228,6 +269,14 @@ class TelegramPollingBot:
 
     def _handle_callback(self, callback: dict[str, Any]) -> None:
         callback_id = callback["id"]
+        try:
+            self._process_callback(callback)
+        except Exception as exc:
+            logger.exception("Callback handling failed: %s", exc)
+            self._answer_callback(callback_id, "שגיאה — נסה שוב")
+
+    def _process_callback(self, callback: dict[str, Any]) -> None:
+        callback_id = callback["id"]
         data = callback.get("data", "")
         message = callback.get("message", {})
         chat_id = message.get("chat", {}).get("id")
@@ -291,29 +340,39 @@ class TelegramPollingBot:
         self._edit_message(chat_id, message_id, original_text + f"\n\n\u2705 {response_text}")
 
     def _answer_callback(self, callback_id: str, text: str) -> None:
-        self.session.post(
-            f"{self.base_url}/answerCallbackQuery",
-            json={"callback_query_id": callback_id, "text": text},
-            timeout=15,
-        )
+        try:
+            self.session.post(
+                f"{self.base_url}/answerCallbackQuery",
+                json={"callback_query_id": callback_id, "text": text},
+                timeout=15,
+            )
+        except Exception as exc:
+            logger.warning("Failed to answer callback: %s", exc)
 
     def _edit_message(self, chat_id: int, message_id: int, text: str) -> None:
-        self.session.post(
-            f"{self.base_url}/editMessageText",
-            json={"chat_id": chat_id, "message_id": message_id, "text": text},
-            timeout=15,
-        )
+        try:
+            self.session.post(
+                f"{self.base_url}/editMessageText",
+                json={"chat_id": chat_id, "message_id": message_id, "text": text},
+                timeout=15,
+            )
+        except Exception as exc:
+            logger.warning("Failed to edit message: %s", exc)
 
     def send_message(self, chat_id: int, text: str, message_thread_id: int | None = None) -> None:
-        payload: dict[str, Any] = {
-            "chat_id": chat_id,
-            "text": text,
-        }
-        if message_thread_id is not None:
-            payload["message_thread_id"] = message_thread_id
+        # Telegram max message length is 4096 characters
+        MAX_LEN = 4096
+        chunks = [text[i:i + MAX_LEN] for i in range(0, len(text), MAX_LEN)] if len(text) > MAX_LEN else [text]
 
-        response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
-        response.raise_for_status()
-        body = response.json()
-        if not body.get("ok"):
-            raise RuntimeError(f"Telegram sendMessage failed: {body}")
+        for chunk in chunks:
+            payload: dict[str, Any] = {
+                "chat_id": chat_id,
+                "text": chunk,
+            }
+            if message_thread_id is not None:
+                payload["message_thread_id"] = message_thread_id
+            response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
+            response.raise_for_status()
+            body = response.json()
+            if not body.get("ok"):
+                raise RuntimeError(f"Telegram sendMessage failed: {body}")
