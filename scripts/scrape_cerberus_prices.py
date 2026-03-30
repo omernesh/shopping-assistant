@@ -121,11 +121,11 @@ def scrape_chain(chain_name: str, config: dict, db: PriceDB, max_files: int = 3)
                 logger.info("Downloading %s (store %s)...", f["name"], store_id)
                 try:
                     # Download via browser fetch (keeps session)
-                    raw_data = page.evaluate(f"""async () => {{
-                        const r = await fetch('{href}');
+                    raw_data = page.evaluate("""async (url) => {
+                        const r = await fetch(url);
                         const buf = await r.arrayBuffer();
                         return Array.from(new Uint8Array(buf));
-                    }}""")
+                    }""", href)
 
                     raw_bytes = bytes(raw_data)
 
@@ -155,6 +155,19 @@ def scrape_chain(chain_name: str, config: dict, db: PriceDB, max_files: int = 3)
     return total_items
 
 
+def _rotate_old_prices(db: PriceDB) -> None:
+    """Delete price entries older than 7 days."""
+    import sqlite3
+    conn = sqlite3.connect(str(db.db_path), isolation_level=None)  # autocommit for VACUUM
+    try:
+        deleted = conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount
+        if deleted:
+            conn.execute('VACUUM')
+            logger.info('Rotated %d old price entries', deleted)
+    finally:
+        conn.close()
+
+
 def main():
     parser = argparse.ArgumentParser(description="Scrape Cerberus price portals")
     parser.add_argument("--chain", choices=list(CHAINS.keys()), help="Single chain only")
@@ -163,7 +176,9 @@ def main():
 
     db = PriceDB(PRICE_DB_PATH)
     db.initialize()
-# Rotate old prices (keep only last 7 days)    import sqlite3    with sqlite3.connect(str(PRICE_DB_PATH)) as conn:        deleted = conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount        if deleted:            conn.execute("VACUUM")            conn.commit()            logger.info("Rotated %d old price entries", deleted)
+
+    # Rotate old prices (keep only last 7 days)
+    _rotate_old_prices(db)
 
     chains = {args.chain: CHAINS[args.chain]} if args.chain else CHAINS
     total = 0

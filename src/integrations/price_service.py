@@ -196,8 +196,9 @@ class PriceService:
 
             if len(products) == 1:
                 pp = products[0]
+                chain_display = PriceService._chain_id_to_name(pp.get("chain", "unknown"))
                 return PriceLookupResult(
-                    text=f"מחיר {pp['item_name']}: ₪{pp['price']:.2f} (שופרסל)" + "\nמקור: פיד רשמי"
+                    text=f"מחיר {pp['item_name']}: ₪{pp['price']:.2f} ({chain_display})\nמקור: פיד רשמי"
                 )
             elif len(products) > 1:
                 choices = [
@@ -213,7 +214,7 @@ class PriceService:
                     needs_disambiguation=True,
                     choices=choices,
                     query=item_name,
-                    text=f'נמצאו {len(choices)} מוצרים דומים ל-"{item_name}". בחר םוצר:',
+                    text=f'נמצאו {len(choices)} מוצרים דומים ל-"{item_name}". בחר מוצר:',
                 )
 
         return PriceLookupResult(text=f"לא נמצא מחיר עבור {item_name}")
@@ -274,6 +275,7 @@ class PriceService:
             if key in raw_chain or raw_chain in key:
                 return display
         return raw_chain
+    @staticmethod
     def _chain_id_to_name(chain_id: str) -> str:
         names = {
             "shufersal": "\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc",

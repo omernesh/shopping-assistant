@@ -80,6 +80,7 @@ def parse_message(text: str) -> ParsedMessage:
     quantity_match = QUANTITY_RE.match(normalized)
     if quantity_match:
         quantity = float(quantity_match.group(1).replace(",", "."))
+        quantity = max(0.01, min(quantity, 999))  # Clamp to reasonable range
         return ParsedMessage(intent="add", value=quantity_match.group(2), quantity=quantity)
 
     unit_match = UNIT_WORDS_RE.match(normalized)
@@ -88,6 +89,7 @@ def parse_message(text: str) -> ParsedMessage:
         unit_info = UNIT_MAP.get(unit_word)
         if unit_info:
             unit_name, qty = unit_info
+            qty = max(0.01, min(qty, 999))
             item_name = unit_match.group(2)
             return ParsedMessage(intent="add", value=f"{unit_name} {item_name}", quantity=qty)
 

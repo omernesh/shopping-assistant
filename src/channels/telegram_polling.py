@@ -9,8 +9,6 @@ from typing import Any
 
 import requests
 
-import time as _time
-
 
 class TTLDict:
     """Simple dict with automatic expiry of old entries."""
@@ -21,19 +19,19 @@ class TTLDict:
 
     def __setitem__(self, key: str, value: Any) -> None:
         self._evict()
-        self._data[key] = (_time.time(), value)
+        self._data[key] = (time.time(), value)
 
     def pop(self, key: str, default: Any = None) -> Any:
         entry = self._data.pop(key, None)
         if entry is None:
             return default
         ts, value = entry
-        if _time.time() - ts > self._ttl:
+        if time.time() - ts > self._ttl:
             return default
         return value
 
     def _evict(self) -> None:
-        now = _time.time()
+        now = time.time()
         # Remove expired
         expired = [k for k, (ts, _) in self._data.items() if now - ts > self._ttl]
         for k in expired:
@@ -276,8 +274,14 @@ class TelegramPollingBot:
         if message_thread_id is not None:
             payload["message_thread_id"] = message_thread_id
 
-        response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
-        response.raise_for_status()
+        try:
+            response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
+            response.raise_for_status()
+        except Exception as exc:
+            logger.warning("Failed to send duplicate keyboard: %s", exc)
+            # Fallback: send plain text without keyboard
+            self.send_message(chat_id=payload["chat_id"], text=payload["text"],
+                              message_thread_id=payload.get("message_thread_id"))
 
     def _send_price_picker(self, chat_id: int, text: str, choices, query: str, message_thread_id: int | None = None) -> None:
         """Send inline keyboard with product choices for price disambiguation."""

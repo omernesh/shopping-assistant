@@ -76,11 +76,11 @@ def _extract_text(el: ET.Element, tag: str) -> str:
     return child.text.strip() if child is not None and child.text else ""
 
 
-def _safe_float(s: str) -> float:
+def _safe_float(s: str) -> float | None:
     try:
-        return float(s) if s else 0.0
+        return float(s) if s else None
     except ValueError:
-        return 0.0
+        return None
 
 
 class PriceDB:
@@ -141,9 +141,15 @@ class PriceDB:
                     SELECT MAX(fetched_at) FROM feed_metadata
                 )
             """)
-            conn.execute("VACUUM")
             conn.commit()
-        logger.info("Price DB rotated, new size: %d bytes", self.get_db_size_bytes())
+        # VACUUM must run outside transaction
+        vacuum_conn = sqlite3.connect(self.db_path, isolation_level=None)
+        try:
+            vacuum_conn.execute("VACUUM")
+        finally:
+            vacuum_conn.close()
+        new_size = self.get_db_size_bytes()
+        logger.info("Price DB rotated: %d -> %d bytes", size, new_size)
         return True
 
     def ingest_xml(self, xml_bytes: bytes, chain: str, store_id: str = "") -> int:
@@ -187,12 +193,15 @@ class PriceDB:
             price_str = _extract_text(item_el, field_map["price"])
             if not name or not price_str:
                 continue
+            price = _safe_float(price_str)
+            if price is None or price <= 0:
+                continue
             rows.append((
                 _extract_text(item_el, field_map["item_code"]),
                 name,
                 _extract_text(item_el, field_map["manufacturer"]),
-                _safe_float(price_str),
-                _safe_float(_extract_text(item_el, field_map["unit_price"])),
+                price,
+                _safe_float(_extract_text(item_el, field_map["unit_price"])) or 0.0,
                 _extract_text(item_el, field_map["quantity"]),
                 _extract_text(item_el, field_map["unit_of_measure"]),
                 1 if _extract_text(item_el, field_map["is_weighted"]) == "1" else 0,

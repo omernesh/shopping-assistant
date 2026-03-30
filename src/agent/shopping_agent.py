@@ -145,6 +145,8 @@ class ShoppingAgent:
                         city=self.router.get_default_city(context),
                     )
                     if result.needs_disambiguation:
+                        if len(self.pending_price_choices) > 100:
+                            self.pending_price_choices.clear()
                         self.pending_price_choices[context.external_chat_id] = result
                         return result.text
                     return result.text

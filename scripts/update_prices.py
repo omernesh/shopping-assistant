@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger(__name__)
 
 PRICE_DB_PATH = PROJECT_ROOT / "data" / "prices.sqlite3"
-MAX_DB_SIZE = 250 * 1024 * 1024  # 75MB - rotate if exceeded
+MAX_DB_SIZE = 250 * 1024 * 1024  # 250MB - rotate if exceeded
 MAX_FILES_PER_CHAIN = 3  # Only download a few store files per chain to keep size manageable
 
 
@@ -117,12 +117,27 @@ def fetch_carrefour_feeds(session: requests.Session, db: PriceDB, max_stores: in
         return 0
 
 
+def _rotate_old_prices(db: PriceDB) -> None:
+    """Delete price entries older than 7 days."""
+    import sqlite3
+    conn = sqlite3.connect(str(db.db_path), isolation_level=None)  # autocommit for VACUUM
+    try:
+        deleted = conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount
+        if deleted:
+            conn.execute('VACUUM')
+            logger.info('Rotated %d old price entries', deleted)
+    finally:
+        conn.close()
+
+
 def main():
     db = PriceDB(PRICE_DB_PATH)
     db.initialize()
 
     db.rotate_if_needed(MAX_DB_SIZE)
-# Delete prices older than 7 days    import sqlite3 as _sql    with _sql.connect(str(PRICE_DB_PATH)) as _conn:        _del = _conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount        if _del:            _conn.execute("VACUUM")            _conn.commit()            logger.info("Rotated %d old price entries", _del)
+
+    # Rotate old prices (keep only last 7 days)
+    _rotate_old_prices(db)
 
     session = requests.Session()
     session.headers.update({
@@ -150,8 +165,6 @@ def main():
     carrefour_items = fetch_carrefour_feeds(session, db, max_stores=5)
     total_items += carrefour_items
 
-    db.rotate_if_needed(MAX_DB_SIZE)
-# Delete prices older than 7 days    import sqlite3 as _sql    with _sql.connect(str(PRICE_DB_PATH)) as _conn:        _del = _conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount        if _del:            _conn.execute("VACUUM")            _conn.commit()            logger.info("Rotated %d old price entries", _del)
 
     size_mb = db.get_db_size_bytes() / (1024 * 1024)
     logger.info("Price update complete. Total items: %d, DB size: %.1f MB", total_items, size_mb)
