@@ -5,7 +5,7 @@ import logging
 from typing import Protocol
 
 from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
-from src.app.router import MessageContext, ShoppingAssistantRouter
+from src.app.router import MessageContext, ShoppingAssistantRouter, DuplicateConflict
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +16,7 @@ class ShoppingAgent:
     def __init__(self, router: ShoppingAssistantRouter, transport: LLMTransport | None = None):
         self.router = router
         self.transport = transport
+        self.pending_conflicts: dict[str, DuplicateConflict] = {}  # keyed by external_chat_id
 
     def handle_message(self, context: MessageContext) -> str:
         if self.transport is None:
@@ -80,11 +81,24 @@ class ShoppingAgent:
             if name == "show_list":
                 return self.router.handle_semantic_action(context, action="show")
             elif name == "add_item":
-                return self.router.handle_semantic_action(
-                    context, action="add",
+                result = self.router.add_item_with_duplicate_check(
+                    context,
                     item_name=args.get("item_name", ""),
                     quantity=args.get("quantity"),
                 )
+                if isinstance(result, DuplicateConflict):
+                    self.pending_conflicts[context.external_chat_id] = result
+                    existing = result.existing_item
+                    eq = int(existing.quantity_value) if existing.quantity_value and existing.quantity_value.is_integer() else existing.quantity_value
+                    nq = int(result.new_quantity) if result.new_quantity and result.new_quantity == int(result.new_quantity) else result.new_quantity
+                    return (
+                        f"\u05db\u05d1\u05e8 \u05d9\u05e9 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4 \u05e4\u05e8\u05d9\u05d8 \u05d3\u05d5\u05de\u05d4: {existing.normalized_name}"
+                        + (f" (\u05db\u05de\u05d5\u05ea: {eq})" if eq else "")
+                        + f". \u05d1\u05d9\u05e7\u05e9\u05ea \u05dc\u05d4\u05d5\u05e1\u05d9\u05e3 {result.new_item_name}"
+                        + (f" (\u05db\u05de\u05d5\u05ea: {nq})" if nq else "")
+                        + ". \u05d4\u05e4\u05e8\u05d9\u05d8 \u05dc\u05d0 \u05e0\u05d5\u05e1\u05e3 \u05e2\u05d3\u05d9\u05d9\u05df \u2014 \u05de\u05d7\u05db\u05d4 \u05dc\u05d4\u05d7\u05dc\u05d8\u05ea \u05d4\u05de\u05e9\u05ea\u05de\u05e9."
+                    )
+                return result
             elif name == "mark_purchased":
                 return self.router.handle_semantic_action(
                     context, action="done",

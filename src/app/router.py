@@ -26,6 +26,18 @@ class MessageContext:
         )
 
 
+@dataclass(frozen=True)
+class DuplicateConflict:
+    """Returned when adding an item that already exists in the list."""
+    new_item_name: str
+    new_quantity: float | None
+    new_note: str | None
+    existing_item: StoredItem
+    list_id: int
+    chat_id: int
+    user_id: str
+
+
 class ShoppingAssistantRouter:
     def __init__(self, store: SQLiteStore, default_city: str = "יבנה"):
         self.store = store
@@ -76,6 +88,57 @@ class ShoppingAssistantRouter:
         if action == "ignore":
             return ""
         return self.handle_message(context)
+
+
+    def add_item_with_duplicate_check(
+        self,
+        context: MessageContext,
+        *,
+        item_name: str,
+        quantity: float | None = None,
+        note: str = "",
+    ) -> str | DuplicateConflict:
+        """Add an item, but check for duplicates first.
+        Returns a string (success message) or DuplicateConflict if a similar item exists.
+        """
+        chat, shopping_list = self._ensure_chat_and_list(context)
+
+        # Check for similar items
+        similar = self.store.find_similar_items(list_id=shopping_list.id, query=item_name)
+        if similar:
+            # Return conflict for the first match
+            return DuplicateConflict(
+                new_item_name=item_name,
+                new_quantity=quantity,
+                new_note=note,
+                existing_item=similar[0],
+                list_id=shopping_list.id,
+                chat_id=chat.id,
+                user_id=context.user_id,
+            )
+
+        # No duplicate - add normally
+        return self.handle_semantic_action(
+            context, action="add", item_name=item_name, quantity=quantity, note=note,
+        )
+
+    def merge_duplicate(self, *, item_id: int, additional_quantity: float) -> str:
+        """Merge quantity into existing item."""
+        item = self.store.merge_item_quantity(item_id=item_id, additional_quantity=additional_quantity)
+        q = int(item.quantity_value) if item.quantity_value and item.quantity_value.is_integer() else item.quantity_value
+        return f"\u05de\u05d5\u05d6\u05d2: {item.normalized_name} (\u05e1\u05d4\"\u05db {q})"
+
+    def update_duplicate(self, *, item_id: int, new_quantity: float) -> str:
+        """Update existing item's quantity."""
+        item = self.store.update_item_quantity(item_id=item_id, new_quantity=new_quantity)
+        q = int(item.quantity_value) if item.quantity_value and item.quantity_value.is_integer() else item.quantity_value
+        return f"\u05e2\u05d5\u05d3\u05db\u05df: {item.normalized_name} (\u05db\u05de\u05d5\u05ea: {q})"
+
+    def force_add_item(self, context: MessageContext, *, item_name: str, quantity: float | None = None, note: str = "") -> str:
+        """Add item without duplicate check (user chose 'add separately')."""
+        return self.handle_semantic_action(
+            context, action="add", item_name=item_name, quantity=quantity, note=note,
+        )
 
     def _ensure_chat_and_list(self, context: MessageContext):
         chat = self.store.ensure_chat(

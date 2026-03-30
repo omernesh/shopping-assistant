@@ -325,3 +325,53 @@ class SQLiteStore:
             added_by_user_id=row["added_by_user_id"],
             purchased_by_user_id=row["purchased_by_user_id"],
         )
+
+    def find_similar_items(self, *, list_id: int, query: str) -> list[StoredItem]:
+        """Find active items whose normalized_name contains or matches the query."""
+        normalized_query = query.strip().lower()
+        if not normalized_query:
+            return []
+        with self.connect() as conn:
+            rows = conn.execute(
+                """
+                SELECT *
+                FROM list_items
+                WHERE list_id = ? AND status = 'active'
+                  AND (lower(normalized_name) LIKE ? OR ? LIKE '%' || lower(normalized_name) || '%')
+                ORDER BY id ASC
+                """,
+                (list_id, f"%{normalized_query}%", normalized_query),
+            ).fetchall()
+        return [self._row_to_item(row) for row in rows]
+
+    def merge_item_quantity(self, *, item_id: int, additional_quantity: float) -> StoredItem:
+        """Add quantity to an existing item."""
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE list_items
+                SET quantity_value = COALESCE(quantity_value, 0) + ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (additional_quantity, item_id),
+            )
+            row = conn.execute("SELECT * FROM list_items WHERE id = ?", (item_id,)).fetchone()
+            conn.commit()
+        return self._row_to_item(row)
+
+    def update_item_quantity(self, *, item_id: int, new_quantity: float) -> StoredItem:
+        """Replace the quantity of an existing item."""
+        with self.connect() as conn:
+            conn.execute(
+                """
+                UPDATE list_items
+                SET quantity_value = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """,
+                (new_quantity, item_id),
+            )
+            row = conn.execute("SELECT * FROM list_items WHERE id = ?", (item_id,)).fetchone()
+            conn.commit()
+        return self._row_to_item(row)
