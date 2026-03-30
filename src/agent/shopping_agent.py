@@ -89,14 +89,12 @@ class ShoppingAgent:
                 if isinstance(result, DuplicateConflict):
                     self.pending_conflicts[context.external_chat_id] = result
                     existing = result.existing_item
-                    eq = int(existing.quantity_value) if existing.quantity_value and existing.quantity_value.is_integer() else existing.quantity_value
-                    nq = int(result.new_quantity) if result.new_quantity and result.new_quantity == int(result.new_quantity) else result.new_quantity
+                    eq = existing.quantity_value
+                    eq_display = int(eq) if eq and eq == int(eq) else eq
                     return (
-                        f"\u05db\u05d1\u05e8 \u05d9\u05e9 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4 \u05e4\u05e8\u05d9\u05d8 \u05d3\u05d5\u05de\u05d4: {existing.normalized_name}"
-                        + (f" (\u05db\u05de\u05d5\u05ea: {eq})" if eq else "")
-                        + f". \u05d1\u05d9\u05e7\u05e9\u05ea \u05dc\u05d4\u05d5\u05e1\u05d9\u05e3 {result.new_item_name}"
-                        + (f" (\u05db\u05de\u05d5\u05ea: {nq})" if nq else "")
-                        + ". \u05d4\u05e4\u05e8\u05d9\u05d8 \u05dc\u05d0 \u05e0\u05d5\u05e1\u05e3 \u05e2\u05d3\u05d9\u05d9\u05df \u2014 \u05de\u05d7\u05db\u05d4 \u05dc\u05d4\u05d7\u05dc\u05d8\u05ea \u05d4\u05de\u05e9\u05ea\u05de\u05e9."
+                        f"נמצא פריט דומה ברשימה: {existing.normalized_name}"
+                        + (f" ({eq_display})" if eq_display else "")
+                        + ". מחכה לבחירת המשתמש."
                     )
                 return result
             elif name == "mark_purchased":
@@ -120,6 +118,11 @@ class ShoppingAgent:
                 return self.router.handle_semantic_action(
                     context, action="price",
                     item_name=args.get("item_name", ""),
+                )
+            elif name == "list_user_items":
+                return self.router.list_items_by_user_name(
+                    context,
+                    user_name=args.get("user_name", ""),
                 )
             else:
                 return f"Unknown tool: {name}"

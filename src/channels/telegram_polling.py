@@ -202,12 +202,18 @@ class TelegramPollingBot:
         new_display = int(nq) if nq and nq == int(nq) else nq
 
         buttons: list[list[dict]] = []
+        # Always show merge option
         if nq and eq:
-            buttons.append([{"text": f"\u05de\u05d6\u05d2 (\u05e1\u05d4\"\u05db {merged_display})", "callback_data": f"dup:merge:{conflict_id}"}])
+            buttons.append([{"text": f"אחד (סה\"כ {merged_display})", "callback_data": f"dup:merge:{conflict_id}"}])
+        elif nq:
+            buttons.append([{"text": f"אחד ({new_display})", "callback_data": f"dup:merge:{conflict_id}"}])
+        else:
+            buttons.append([{"text": "אחד", "callback_data": f"dup:merge:{conflict_id}"}])
+        
         if nq:
-            buttons.append([{"text": f"\u05e2\u05d3\u05db\u05df \u05dc-{new_display}", "callback_data": f"dup:update:{conflict_id}"}])
-        buttons.append([{"text": "\u05d4\u05d5\u05e1\u05e3 \u05d1\u05e0\u05e4\u05e8\u05d3", "callback_data": f"dup:add:{conflict_id}"}])
-        buttons.append([{"text": "\u05d1\u05d8\u05dc", "callback_data": f"dup:cancel:{conflict_id}"}])
+            buttons.append([{"text": f"עדכן ל-{new_display}", "callback_data": f"dup:update:{conflict_id}"}])
+        buttons.append([{"text": "הוסף בנפרד", "callback_data": f"dup:add:{conflict_id}"}])
+        buttons.append([{"text": "בטל", "callback_data": f"dup:cancel:{conflict_id}"}])
 
         payload: dict[str, Any] = {
             "chat_id": chat_id,

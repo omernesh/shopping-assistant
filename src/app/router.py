@@ -9,6 +9,7 @@ from src.storage.sqlite_store import SQLiteStore, StoredItem
 
 import logging
 from src.integrations.chp_client import CHPClient, format_price_summary
+from src.integrations.feed_downloader import PriceDB, format_feed_results
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +21,7 @@ class MessageContext:
     user_id: str
     text: str
     title: str | None = None
+    user_name: str | None = None
 
     def with_text(self, text: str) -> "MessageContext":
         return MessageContext(
@@ -28,6 +30,7 @@ class MessageContext:
             user_id=self.user_id,
             text=text,
             title=self.title,
+            user_name=self.user_name,
         )
 
 
@@ -44,10 +47,11 @@ class DuplicateConflict:
 
 
 class ShoppingAssistantRouter:
-    def __init__(self, store: SQLiteStore, default_city: str = "יבנה", chp_client: CHPClient | None = None):
+    def __init__(self, store: SQLiteStore, default_city: str = "יבנה", chp_client: CHPClient | None = None, price_db: PriceDB | None = None):
         self.store = store
         self.default_city = default_city
         self.chp_client = chp_client
+        self.price_db = price_db
 
     def handle_message(self, context: MessageContext) -> str:
         parsed = parse_message(context.text)
@@ -154,7 +158,25 @@ class ShoppingAssistantRouter:
             default_city=self.default_city,
         )
         shopping_list = self.store.ensure_active_list(chat_id=chat.id)
+        if context.user_name:
+            self.store.upsert_user(chat_id=chat.id, user_id=context.user_id, display_name=context.user_name)
         return chat, shopping_list
+
+    def list_items_by_user_name(self, context: MessageContext, *, user_name: str) -> str:
+        """List items added by a specific user (searched by display name)."""
+        chat, shopping_list = self._ensure_chat_and_list(context)
+        items = self.store.list_items_by_user(
+            list_id=shopping_list.id,
+            user_name=user_name,
+            chat_id=chat.id,
+        )
+        if not items:
+            return f"לא נמצאו פריטים של {user_name} ברשימה"
+
+        lines = [f"הפריטים של {user_name}:"]
+        for item in items:
+            lines.append(f"- {self._format_item(item)}")
+        return "\n".join(lines)
 
     def _handle_parsed_message(self, context: MessageContext, parsed: ParsedMessage, note: str | None = None) -> str:
         chat, shopping_list = self._ensure_chat_and_list(context)
@@ -193,18 +215,27 @@ class ShoppingAssistantRouter:
             return "פקודות: ?, תראה, קניתי <פריט>, מחק <פריט>, מחיר <פריט>"
 
         if parsed.intent == "price":
-            if not self.chp_client:
-                return f"בדיקת מחירים לא זמינה כרגע"
-            try:
-                chat, _ = self._ensure_chat_and_list(context)
-                city = chat.default_city or self.default_city
-                result = self.chp_client.search(parsed.value, city=city)
-                if not result.stores and not result.online_stores:
-                    return f"לא נמצאו תוצאות מחיר עבור {parsed.value} ב{city}"
-                return format_price_summary(result, limit=5)
-            except Exception as exc:
-                logger.exception("CHP price lookup failed: %s", exc)
-                return f"שגיאה בבדיקת מחיר ל-{parsed.value}. נסה שוב מאוחר יותר."
+            # Try local price DB first (official feeds)
+            if self.price_db:
+                try:
+                    results = self.price_db.search_product(parsed.value)
+                    if results:
+                        return format_feed_results(results, parsed.value)
+                except Exception as exc:
+                    logger.warning("Price DB query failed, trying CHP: %s", exc)
+
+            # Fall back to CHP
+            if self.chp_client:
+                try:
+                    chat, _ = self._ensure_chat_and_list(context)
+                    city = chat.default_city or self.default_city
+                    result = self.chp_client.search(parsed.value, city=city)
+                    if result.stores or result.online_stores:
+                        return format_price_summary(result, limit=5)
+                except Exception as exc:
+                    logger.exception("CHP price lookup failed: %s", exc)
+
+            return f"בדיקת מחירים לא זמינה כרגע עבור {parsed.value}"
 
         if parsed.intent == "city":
             self.store.update_chat_default_city(chat_id=chat.id, default_city=parsed.value or self.default_city)

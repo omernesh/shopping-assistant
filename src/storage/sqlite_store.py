@@ -84,6 +84,17 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
         expires_at TEXT NOT NULL
     )
     """,
+    """
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        chat_id INTEGER NOT NULL,
+        user_id TEXT NOT NULL,
+        display_name TEXT,
+        last_seen_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE(chat_id, user_id),
+        FOREIGN KEY(chat_id) REFERENCES chats(id)
+    )
+    """,
 )
 
 
@@ -135,6 +146,49 @@ class SQLiteStore:
             for statement in SCHEMA_STATEMENTS:
                 conn.execute(statement)
             conn.commit()
+
+
+    def get_db_size_bytes(self) -> int:
+        if self.db_path.exists():
+            return self.db_path.stat().st_size
+        return 0
+
+    def rotate_if_needed(self, max_bytes: int = 50 * 1024 * 1024) -> bool:
+        """Rotate old data if DB exceeds max_bytes.
+        Deletes purchased/deleted items older than 30 days and old events.
+        """
+        size = self.get_db_size_bytes()
+        if size <= max_bytes:
+            return False
+
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.warning("Shopping DB size %d bytes exceeds limit %d, rotating...", size, max_bytes)
+
+        with self.connect() as conn:
+            conn.execute("""
+                DELETE FROM list_items
+                WHERE status IN ('purchased', 'deleted')
+                AND updated_at < datetime('now', '-30 days')
+            """)
+            conn.execute("""
+                DELETE FROM events
+                WHERE created_at < datetime('now', '-60 days')
+            """)
+            conn.execute("""
+                DELETE FROM price_queries
+                WHERE created_at < datetime('now', '-30 days')
+            """)
+            conn.execute("""
+                DELETE FROM price_cache
+                WHERE expires_at < datetime('now')
+            """)
+            conn.execute("VACUUM")
+            conn.commit()
+
+        new_size = self.get_db_size_bytes()
+        logger.info("Shopping DB rotated: %d -> %d bytes", size, new_size)
+        return True
 
     def fetch_schema_objects(self) -> Iterable[sqlite3.Row]:
         with self.connect() as conn:
@@ -325,6 +379,59 @@ class SQLiteStore:
             added_by_user_id=row["added_by_user_id"],
             purchased_by_user_id=row["purchased_by_user_id"],
         )
+
+    def upsert_user(self, *, chat_id: int, user_id: str, display_name: str | None) -> None:
+        """Record or update a user's display name for this chat."""
+        if not display_name:
+            return
+        with self.connect() as conn:
+            conn.execute(
+                """
+                INSERT INTO users (chat_id, user_id, display_name)
+                VALUES (?, ?, ?)
+                ON CONFLICT(chat_id, user_id) DO UPDATE SET
+                    display_name = COALESCE(excluded.display_name, users.display_name),
+                    last_seen_at = CURRENT_TIMESTAMP
+                """,
+                (chat_id, user_id, display_name),
+            )
+            conn.commit()
+
+    def get_user_display_name(self, *, chat_id: int, user_id: str) -> str | None:
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT display_name FROM users WHERE chat_id = ? AND user_id = ?",
+                (chat_id, user_id),
+            ).fetchone()
+        return row["display_name"] if row else None
+
+    def list_items_by_user(self, *, list_id: int, user_id: str | None = None, user_name: str | None = None, chat_id: int | None = None) -> list[StoredItem]:
+        """List active items added by a specific user (by user_id or by display name lookup)."""
+        actual_user_id = user_id
+        if not actual_user_id and user_name and chat_id:
+            # Look up user_id by display name
+            with self.connect() as conn:
+                row = conn.execute(
+                    "SELECT user_id FROM users WHERE chat_id = ? AND lower(display_name) LIKE ?",
+                    (chat_id, f"%{user_name.lower()}%"),
+                ).fetchone()
+            if row:
+                actual_user_id = row["user_id"]
+
+        if not actual_user_id:
+            return []
+
+        with self.connect() as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                """
+                SELECT * FROM list_items
+                WHERE list_id = ? AND status = 'active' AND added_by_user_id = ?
+                ORDER BY category ASC, created_at ASC
+                """,
+                (list_id, actual_user_id),
+            ).fetchall()
+        return [self._row_to_item(row) for row in rows]
 
     def find_similar_items(self, *, list_id: int, query: str) -> list[StoredItem]:
         """Find active items whose normalized_name contains or matches the query."""

@@ -12,6 +12,7 @@ class TelegramMessageContext:
     user_id: int
     text: str
     title: str | None = None
+    user_name: str | None = None
 
     @property
     def external_chat_id(self) -> str:
@@ -26,6 +27,7 @@ class TelegramMessageContext:
             user_id=str(self.user_id),
             text=self.text,
             title=self.title,
+            user_name=self.user_name,
         )
 
 
@@ -38,10 +40,16 @@ class TelegramBotAdapter:
     def normalize_message(self, payload: dict) -> TelegramMessageContext:
         message = payload.get("message", payload)
         chat = message["chat"]
+        from_user = message.get("from", {})
+        # Build display name from first_name + last_name
+        first = from_user.get("first_name", "")
+        last = from_user.get("last_name", "")
+        user_name = f"{first} {last}".strip() or from_user.get("username") or None
         return TelegramMessageContext(
             chat_id=chat["id"],
             thread_id=message.get("message_thread_id"),
             user_id=message["from"]["id"],
             text=message.get("text", "").strip(),
             title=chat.get("title"),
+            user_name=user_name,
         )
