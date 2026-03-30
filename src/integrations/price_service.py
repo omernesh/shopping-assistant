@@ -15,6 +15,7 @@ class ItemPrice:
     best_store: str | None = None
     chain_prices: dict[str, float] = field(default_factory=dict)  # chain_name -> price
     source: str = ""  # "chp" or "feed"
+    resolved_name: str = ""  # The actual product CHP resolved to
 
 
 @dataclass
@@ -121,7 +122,7 @@ class PriceService:
         chain_item_counts: dict[str, int] = {}
 
         for item_name, quantity in items:
-            ip = self.lookup_item_prices(item_name, quantity, city)
+            ip = self._lookup_chp_only(item_name, quantity, city)
             all_item_prices.append(ip)
 
             if not ip.chain_prices:
@@ -156,7 +157,31 @@ class PriceService:
             most_expensive_total=most_expensive[1],
         )
 
-    @staticmethod
+
+    def _lookup_chp_only(self, item_name: str, quantity: float = 1, city: str = "יבנה") -> ItemPrice:
+        """CHP-only lookup for chain comparison. Returns same-SKU prices across chains."""
+        result = ItemPrice(item_name=item_name, quantity=quantity)
+        if not self.chp_client:
+            return result
+        try:
+            chp_result = self.chp_client.search(item_name, city=city)
+            if chp_result.stores:
+                result.resolved_name = chp_result.product_full_name or item_name
+                result.source = "chp"
+                for store in chp_result.stores:
+                    name = store.chain or store.store_name or "unknown"
+                    chain_name = PriceService._normalize_chain_name(name)
+                    price = store.price
+                    if price and (chain_name not in result.chain_prices or price < result.chain_prices[chain_name]):
+                        result.chain_prices[chain_name] = price
+                if result.chain_prices:
+                    cheapest = min(result.chain_prices.items(), key=lambda x: x[1])
+                    result.best_price = cheapest[1]
+                    result.best_store = cheapest[0]
+        except Exception as exc:
+            logger.warning("CHP lookup failed for %s: %s", item_name, exc)
+        return result
+
     @staticmethod
     def _normalize_chain_name(raw_chain: str) -> str:
         """Normalize CHP chain names to canonical display names."""
@@ -208,9 +233,11 @@ def format_list_estimate(estimate: ListEstimate) -> str:
         q = int(ip.quantity) if ip.quantity == int(ip.quantity) else ip.quantity
         if ip.best_price is not None:
             item_total = ip.best_price * ip.quantity
-            lines.append(f"\u2022 {ip.item_name} x{q} \u2014 \u20aa{item_total:.2f} ({ip.best_store})")
+            name = ip.resolved_name if ip.resolved_name else ip.item_name
+            lines.append(f"\u2022 {name} x{q} \u2014 \u20aa{item_total:.2f} ({ip.best_store})")
         else:
-            lines.append(f"\u2022 {ip.item_name} x{q} \u2014 \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0 \u05de\u05d7\u05d9\u05e8")
+            name = ip.resolved_name if ip.resolved_name else ip.item_name
+            lines.append(f"\u2022 {name} x{q} \u2014 \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0 \u05de\u05d7\u05d9\u05e8")
 
     lines.append(f"\n\u05e1\u05d4\"\u05db: \u20aa{estimate.total:.2f}")
     if estimate.items_missing > 0:
@@ -238,12 +265,15 @@ def format_chain_comparison(comparison: ChainComparison) -> str:
             sorted_chains = sorted(ip.chain_prices.items(), key=lambda x: x[1])
             if len(sorted_chains) > 1:
                 prices_str = ", ".join(f"{c}: ₪{p:.2f}" for c, p in sorted_chains[:3])
-                lines.append(f"• {ip.item_name} x{q} — {prices_str}")
+                display_name = ip.resolved_name if ip.resolved_name else ip.item_name
+                lines.append(f"• {display_name} x{q} — {prices_str}")
             else:
                 c, p = sorted_chains[0]
-                lines.append(f"• {ip.item_name} x{q} — {c}: ₪{p:.2f}")
+                display_name = ip.resolved_name if ip.resolved_name else ip.item_name
+                lines.append(f"• {display_name} x{q} — {c}: ₪{p:.2f}")
         else:
-            lines.append(f"• {ip.item_name} x{q} — לא נמצא מחיר")
+            display_name = ip.resolved_name if ip.resolved_name else ip.item_name
+            lines.append(f"• {display_name} x{q} — לא נמצא מחיר")
 
     if comparison.items_missing > 0:
         lines.append(f"\n({comparison.items_missing} פריטים ללא מחיר)")
