@@ -38,6 +38,24 @@ class ChainComparison:
     most_expensive_total: float
 
 
+
+@dataclass
+class ProductChoice:
+    item_name: str
+    item_code: str
+    price: float
+    manufacturer: str
+
+
+@dataclass
+class PriceLookupResult:
+    """Result of a price lookup — either a direct result or a list of choices."""
+    text: str = ""
+    needs_disambiguation: bool = False
+    choices: list[ProductChoice] = field(default_factory=list)
+    query: str = ""
+
+
 class PriceService:
     """Combines CHP and local price DB to provide list-level pricing."""
 
@@ -156,6 +174,49 @@ class PriceService:
             most_expensive_chain=most_expensive[0],
             most_expensive_total=most_expensive[1],
         )
+
+
+    def price_lookup_with_disambiguation(self, item_name: str, city: str = "יבנה") -> PriceLookupResult:
+        """Look up price, returning disambiguation choices if multiple products match."""
+        clean_name = item_name.replace("׳", "").replace("'", "").replace('״', "").replace('"', "").strip()
+
+        if self.chp_client:
+            try:
+                from src.integrations.chp_client import format_price_summary
+                chp_result = self.chp_client.search(clean_name, city=city)
+                if chp_result.stores:
+                    return PriceLookupResult(text=format_price_summary(chp_result, limit=5))
+            except Exception as exc:
+                logger.warning("CHP lookup failed for %s: %s", item_name, exc)
+
+        if self.price_db:
+            products = self.price_db.find_matching_products(clean_name, limit=8)
+            if not products:
+                products = self.price_db.find_matching_products(item_name, limit=8)
+
+            if len(products) == 1:
+                pp = products[0]
+                return PriceLookupResult(
+                    text=f"מחיר {pp['item_name']}: ₪{pp['price']:.2f} (שופרסל)" + "\nמקור: פיד רשמי"
+                )
+            elif len(products) > 1:
+                choices = [
+                    ProductChoice(
+                        item_name=pp["item_name"],
+                        item_code=pp.get("item_code", ""),
+                        price=pp["price"],
+                        manufacturer=pp.get("manufacturer", ""),
+                    )
+                    for pp in products
+                ]
+                return PriceLookupResult(
+                    needs_disambiguation=True,
+                    choices=choices,
+                    query=item_name,
+                    text=f'נמצאו {len(choices)} מוצרים דומים ל-"{item_name}". בחר םוצר:',
+                )
+
+        return PriceLookupResult(text=f"לא נמצא מחיר עבור {item_name}")
 
 
     def _lookup_chp_only(self, item_name: str, quantity: float = 1, city: str = "יבנה") -> ItemPrice:

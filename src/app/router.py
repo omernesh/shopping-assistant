@@ -10,7 +10,7 @@ from src.storage.sqlite_store import SQLiteStore, StoredItem
 import logging
 from src.integrations.chp_client import CHPClient, format_price_summary
 from src.integrations.feed_downloader import PriceDB, format_feed_results
-from src.integrations.price_service import PriceService, format_list_estimate, format_chain_comparison
+from src.integrations.price_service import PriceService, format_list_estimate, format_chain_comparison, PriceLookupResult
 
 logger = logging.getLogger(__name__)
 
@@ -69,6 +69,14 @@ class ShoppingAssistantRouter:
     def get_default_city(self, context: MessageContext) -> str:
         chat, _ = self._ensure_chat_and_list(context)
         return chat.default_city or self.default_city
+
+    def price_lookup_with_disambiguation(self, context: MessageContext, *, item_name: str) -> "PriceLookupResult":
+        """Price lookup that may return disambiguation choices."""
+        if not self.price_service:
+            return PriceLookupResult(text="שירות המחירים לא זמין כרגע")
+        chat, _ = self._ensure_chat_and_list(context)
+        city = chat.default_city or self.default_city
+        return self.price_service.price_lookup_with_disambiguation(item_name, city=city)
 
     def preview_list(self, context: MessageContext) -> str:
         _, shopping_list = self._ensure_chat_and_list(context)
@@ -261,6 +269,9 @@ class ShoppingAssistantRouter:
             return "פקודות: ?, תראה, קניתי <פריט>, מחק <פריט>, מחיר <פריט>"
 
         if parsed.intent == "price":
+            if self.price_service:
+                result = self.price_service.price_lookup_with_disambiguation(parsed.value, city=chat.default_city or self.default_city)
+                return result.text
             # Try local price DB first (official feeds)
             if self.price_db:
                 try:

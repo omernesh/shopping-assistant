@@ -196,6 +196,18 @@ class TelegramPollingBot:
             )
             return
 
+        # Check for pending price disambiguation
+        price_result = self.agent.pending_price_choices.pop(context.external_chat_id, None)
+        if price_result and price_result.needs_disambiguation:
+            self._send_price_picker(
+                chat_id=message["chat"]["id"],
+                text=response_text,
+                choices=price_result.choices,
+                query=price_result.query,
+                message_thread_id=message.get("message_thread_id"),
+            )
+            return
+
         self.send_message(
             chat_id=message["chat"]["id"],
             text=response_text,
@@ -267,6 +279,31 @@ class TelegramPollingBot:
         response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
         response.raise_for_status()
 
+    def _send_price_picker(self, chat_id: int, text: str, choices, query: str, message_thread_id: int | None = None) -> None:
+        """Send inline keyboard with product choices for price disambiguation."""
+        buttons = []
+        for i, choice in enumerate(choices[:6]):
+            picker_id = uuid.uuid4().hex[:8]
+            self.pending_conflicts[picker_id] = ("price_pick", choice)
+            label = f"{choice.item_name} \u2014 \u20aa{choice.price:.2f}"
+            if len(label) > 45:
+                label = label[:42] + "..."
+            buttons.append([{"text": label, "callback_data": f"pick:{picker_id}"}])
+
+        payload: dict[str, Any] = {
+            "chat_id": chat_id,
+            "text": text,
+            "reply_markup": json.dumps({"inline_keyboard": buttons}),
+        }
+        if message_thread_id is not None:
+            payload["message_thread_id"] = message_thread_id
+
+        try:
+            response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
+            response.raise_for_status()
+        except Exception as exc:
+            logger.warning("Failed to send price picker: %s", exc)
+
     def _handle_callback(self, callback: dict[str, Any]) -> None:
         callback_id = callback["id"]
         try:
@@ -282,6 +319,19 @@ class TelegramPollingBot:
         chat_id = message.get("chat", {}).get("id")
         message_id = message.get("message_id")
         thread_id = message.get("message_thread_id")
+
+        if data.startswith("pick:"):
+            picker_id = data.split(":", 1)[1]
+            entry = self.pending_conflicts.pop(picker_id, None)
+            if entry is None:
+                self._answer_callback(callback_id, "\u05d4\u05d1\u05d7\u05d9\u05e8\u05d4 \u05e4\u05d2\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")
+                return
+            action_type, choice = entry
+            if action_type == "price_pick":
+                text = f"\u05de\u05d7\u05d9\u05e8 {choice.item_name}: \u20aa{choice.price:.2f} (\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc)\n\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9"
+                self._answer_callback(callback_id, f"\u20aa{choice.price:.2f}")
+                self._edit_message(chat_id, message_id, text)
+            return
 
         if not data.startswith("dup:"):
             self._answer_callback(callback_id, "\u05e4\u05e2\u05d5\u05dc\u05d4 \u05dc\u05d0 \u05de\u05d5\u05db\u05e8\u05ea")

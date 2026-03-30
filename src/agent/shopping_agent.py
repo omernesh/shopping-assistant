@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
+from typing import Any
 from src.app.router import MessageContext, ShoppingAssistantRouter, DuplicateConflict
 
 logger = logging.getLogger(__name__)
@@ -15,6 +16,7 @@ class ShoppingAgent:
         self.router = router
         self.transport = transport
         self.pending_conflicts: dict[str, DuplicateConflict] = {}  # keyed by external_chat_id
+        self.pending_price_choices: dict[str, Any] = {}  # keyed by external_chat_id
 
     def _should_skip_llm(self, text: str) -> bool:
         """Quick pre-filter to avoid wasting LLM calls on obviously non-shopping messages."""
@@ -136,10 +138,17 @@ class ShoppingAgent:
                     city=args.get("city", ""),
                 )
             elif name == "price_lookup":
-                return self.router.handle_semantic_action(
-                    context, action="price",
-                    item_name=args.get("item_name", ""),
-                )
+                item_name = args.get("item_name", "")
+                if self.router.price_service:
+                    result = self.router.price_service.price_lookup_with_disambiguation(
+                        item_name,
+                        city=self.router.get_default_city(context),
+                    )
+                    if result.needs_disambiguation:
+                        self.pending_price_choices[context.external_chat_id] = result
+                        return result.text
+                    return result.text
+                return self.router.handle_semantic_action(context, action="price", item_name=item_name)
             elif name == "list_user_items":
                 return self.router.list_items_by_user_name(
                     context,

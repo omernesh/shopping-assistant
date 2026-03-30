@@ -211,6 +211,36 @@ class PriceDB:
 
         return len(rows)
 
+    def find_matching_products(self, query: str, limit: int = 8) -> list[dict]:
+        """Find distinct products matching the query, returning one per product name."""
+        with sqlite3.connect(self.db_path) as conn:
+            conn.row_factory = sqlite3.Row
+            rows = conn.execute(
+                """
+                SELECT item_name, item_code, MIN(price) as price, manufacturer, chain
+                FROM products
+                WHERE item_name LIKE ?
+                GROUP BY item_code
+                ORDER BY price ASC
+                LIMIT ?
+                """,
+                (f"{query}%", limit),
+            ).fetchall()
+
+            if len(rows) < 2:
+                rows = conn.execute(
+                    """
+                    SELECT item_name, item_code, MIN(price) as price, manufacturer, chain
+                    FROM products
+                    WHERE item_name LIKE ?
+                    GROUP BY item_code
+                    ORDER BY price ASC
+                    LIMIT ?
+                    """,
+                    (f"%{query}%", limit),
+                ).fetchall()
+        return [dict(r) for r in rows]
+
 
 def format_feed_results(results: list[dict], query: str, limit: int = 5) -> str:
     """Format price DB search results for chat display."""
@@ -251,3 +281,4 @@ def format_feed_results(results: list[dict], query: str, limit: int = 5) -> str:
 
     lines.append("\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9 (\u05d7\u05d5\u05e7 \u05e9\u05e7\u05d9\u05e4\u05d5\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd)")
     return "\n".join(lines)
+
