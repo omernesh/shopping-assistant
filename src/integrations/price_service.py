@@ -54,8 +54,8 @@ class PriceService:
                 chp_result = self.chp_client.search(item_name, city=city)
                 if chp_result.stores:
                     for store in chp_result.stores:
-                        name = store.store_name or "unknown"
-                        chain_name = self._normalize_chain_name(name)
+                        name = store.chain or store.store_name or "unknown"
+                        chain_name = PriceService._normalize_chain_name(name)
                         price = store.price
                         if price and (chain_name not in result.chain_prices or price < result.chain_prices[chain_name]):
                             result.chain_prices[chain_name] = price
@@ -76,7 +76,7 @@ class PriceService:
                 if rows:
                     for row in rows:
                         chain = row.get("chain", "unknown")
-                        chain_display = self._chain_id_to_name(chain)
+                        chain_display = PriceService._chain_id_to_name(chain)
                         price = row["price"]
                         if chain_display not in result.chain_prices or price < result.chain_prices[chain_display]:
                             result.chain_prices[chain_display] = price
@@ -157,27 +157,37 @@ class PriceService:
         )
 
     @staticmethod
-    def _normalize_chain_name(store_name: str) -> str:
-        """Extract chain name from a CHP store name."""
-        name = store_name.split("\u2014")[0].split("-")[0].strip()
-        chains = {
-            "\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9": "\u05e8\u05de\u05d9 \u05dc\u05d5\u05d9",
-            "\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc": "\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc",
-            "\u05de\u05d2\u05d4": "\u05de\u05d2\u05d4",
-            "\u05d5\u05d9\u05e7\u05d8\u05d5\u05e8\u05d9": "\u05d5\u05d9\u05e7\u05d8\u05d5\u05e8\u05d9",
-            "\u05d9\u05d5\u05d7\u05e0\u05e0\u05d5\u05e3": "\u05d9\u05d5\u05d7\u05e0\u05e0\u05d5\u05e3",
-            "\u05d0\u05d5\u05e9\u05e8 \u05e2\u05d3": "\u05d0\u05d5\u05e9\u05e8 \u05e2\u05d3",
-            "\u05d7\u05e6\u05d9 \u05d7\u05d9\u05e0\u05dd": "\u05d7\u05e6\u05d9 \u05d7\u05d9\u05e0\u05dd",
-            "\u05d8\u05d9\u05d1 \u05d8\u05e2\u05dd": "\u05d8\u05d9\u05d1 \u05d8\u05e2\u05dd",
-            "\u05d9\u05d9\u05e0\u05d5\u05ea \u05d1\u05d9\u05ea\u05df": "\u05d9\u05d9\u05e0\u05d5\u05ea \u05d1\u05d9\u05ea\u05df",
-            "\u05e1\u05d5\u05e4\u05e8 \u05e4\u05d0\u05e8\u05dd": "\u05e1\u05d5\u05e4\u05e8 \u05e4\u05d0\u05e8\u05dd",
-        }
-        for key, display in chains.items():
-            if key in store_name:
-                return display
-        return name
-
     @staticmethod
+    def _normalize_chain_name(raw_chain: str) -> str:
+        """Normalize CHP chain names to canonical display names."""
+        # Map CHP chain field values to canonical Hebrew names
+        CHAIN_MAP = {
+            "שופרסל": "שופרסל",
+            "שופרסל דיל": "שופרסל",
+            "שופרסל אקספרס": "שופרסל",
+            "רמי לוי": "רמי לוי",
+            "Carrefour market (קרפור מרקט)": "קרפור",
+            "קרפור": "קרפור",
+            "ויקטורי פלוס": "ויקטורי",
+            "ויקטורי": "ויקטורי",
+            "מחסני השוק בשבילך": "מחסני השוק",
+            "מחסני להב": "מחסני להב",
+            "יוחננוף": "יוחננוף",
+            "אושר עד": "אושר עד",
+            "חצי חינם": "חצי חינם",
+            "טיב טעם": "טיב טעם",
+            "יינות ביתן": "יינות ביתן",
+            "yellow": "Yellow",
+            "מיני סופר אלונית": "אלונית",
+        }
+        # Exact match first
+        if raw_chain in CHAIN_MAP:
+            return CHAIN_MAP[raw_chain]
+        # Partial match
+        for key, display in CHAIN_MAP.items():
+            if key in raw_chain or raw_chain in key:
+                return display
+        return raw_chain
     def _chain_id_to_name(chain_id: str) -> str:
         names = {
             "shufersal": "\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc",
@@ -210,19 +220,33 @@ def format_list_estimate(estimate: ListEstimate) -> str:
 
 def format_chain_comparison(comparison: ChainComparison) -> str:
     """Format a chain comparison for chat display."""
-    lines = ["\u05d4\u05e9\u05d5\u05d5\u05d0\u05ea \u05de\u05d7\u05d9\u05e8\u05d9 \u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \u05d1\u05d9\u05df \u05e8\u05e9\u05ea\u05d5\u05ea:\n"]
+    lines = ["השוואת מחירי הרשימה בין רשתות:\n"]
 
     for i, (chain, total) in enumerate(comparison.chain_totals.items(), 1):
-        marker = " \u2190 \u05d4\u05db\u05d9 \u05d6\u05d5\u05dc" if chain == comparison.cheapest_chain else ""
-        lines.append(f"{i}. {chain} \u2014 \u20aa{total:.2f}{marker}")
+        marker = " ⬅ הכי זול!" if chain == comparison.cheapest_chain else ""
+        lines.append(f"{i}. {chain} — ₪{total:.2f}{marker}")
 
     if comparison.cheapest_total and comparison.most_expensive_total and comparison.cheapest_chain != comparison.most_expensive_chain:
         savings = comparison.most_expensive_total - comparison.cheapest_total
         pct = (savings / comparison.most_expensive_total) * 100
-        lines.append(f"\n\u05d7\u05d9\u05e1\u05db\u05d5\u05df \u05e4\u05d5\u05d8\u05e0\u05e6\u05d9\u05d0\u05dc\u05d9: \u20aa{savings:.2f} ({pct:.0f}%)")
+        lines.append(f"\nחיסכון פוטנציאלי: ₪{savings:.2f} ({pct:.0f}%)")
+
+    lines.append("\nפירוט לפי פריט:")
+    for ip in comparison.items:
+        q = int(ip.quantity) if ip.quantity == int(ip.quantity) else ip.quantity
+        if ip.chain_prices:
+            sorted_chains = sorted(ip.chain_prices.items(), key=lambda x: x[1])
+            if len(sorted_chains) > 1:
+                prices_str = ", ".join(f"{c}: ₪{p:.2f}" for c, p in sorted_chains[:3])
+                lines.append(f"• {ip.item_name} x{q} — {prices_str}")
+            else:
+                c, p = sorted_chains[0]
+                lines.append(f"• {ip.item_name} x{q} — {c}: ₪{p:.2f}")
+        else:
+            lines.append(f"• {ip.item_name} x{q} — לא נמצא מחיר")
 
     if comparison.items_missing > 0:
-        lines.append(f"({comparison.items_missing} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8)")
+        lines.append(f"\n({comparison.items_missing} פריטים ללא מחיר)")
 
-    lines.append(f"\n\u05de\u05d1\u05d5\u05e1\u05e1 \u05e2\u05dc {comparison.items_priced} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05de\u05ea\u05d5\u05de\u05d7\u05e8\u05d9\u05dd")
+    lines.append(f"\nמבוסס על {comparison.items_priced} פריטים מתומחרים")
     return "\n".join(lines)
