@@ -90,9 +90,10 @@ class PriceDB:
             conn.executescript(PRICE_DB_SCHEMA)
 
     def search_product(self, query: str, limit: int = 20) -> list[dict]:
-        """Search products by name. Returns cheapest prices across chains."""
+        """Search products by name. Prefers exact matches, falls back to LIKE."""
         with sqlite3.connect(self.db_path) as conn:
             conn.row_factory = sqlite3.Row
+            # Try prefix match first (item name starts with query)
             rows = conn.execute(
                 """
                 SELECT item_name, manufacturer, price, unit_price, chain, store_id, update_date
@@ -101,8 +102,21 @@ class PriceDB:
                 ORDER BY price ASC
                 LIMIT ?
                 """,
-                (f"%{query}%", limit),
+                (f"{query}%", limit),
             ).fetchall()
+
+            if not rows:
+                # Fallback to contains match
+                rows = conn.execute(
+                    """
+                    SELECT item_name, manufacturer, price, unit_price, chain, store_id, update_date
+                    FROM products
+                    WHERE item_name LIKE ?
+                    ORDER BY price ASC
+                    LIMIT ?
+                    """,
+                    (f"%{query}%", limit),
+                ).fetchall()
         return [dict(r) for r in rows]
 
     def get_db_size_bytes(self) -> int:

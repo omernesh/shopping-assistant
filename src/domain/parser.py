@@ -13,6 +13,18 @@ COMMAND_PREFIXES = {
 }
 
 QUANTITY_RE = re.compile(r"^\s*(\d+(?:[.,]\d+)?)\s+(.+?)\s*$")
+UNIT_WORDS_RE = re.compile(
+    r"^\s*(חצי|קילו|ליטר|גרם|ק״ג|ק\"ג)\s+(.+?)\s*$"
+)
+
+UNIT_MAP = {
+    "קילו": ("קילו", 1.0),
+    "ק״ג": ("קילו", 1.0),
+    'ק"ג': ("קילו", 1.0),
+    "ליטר": ("ליטר", 1.0),
+    "גרם": ("גרם", 1.0),
+    "חצי": ("חצי", 0.5),
+}
 URL_RE = re.compile(r"https?://|www\.", re.IGNORECASE)
 META_MARKERS = (
     "sammie",
@@ -69,6 +81,15 @@ def parse_message(text: str) -> ParsedMessage:
     if quantity_match:
         quantity = float(quantity_match.group(1).replace(",", "."))
         return ParsedMessage(intent="add", value=quantity_match.group(2), quantity=quantity)
+
+    unit_match = UNIT_WORDS_RE.match(normalized)
+    if unit_match:
+        unit_word = unit_match.group(1)
+        unit_info = UNIT_MAP.get(unit_word)
+        if unit_info:
+            unit_name, qty = unit_info
+            item_name = unit_match.group(2)
+            return ParsedMessage(intent="add", value=f"{unit_name} {item_name}", quantity=qty)
 
     if _should_ignore_as_item(text):
         return ParsedMessage(intent="ignore", value="")

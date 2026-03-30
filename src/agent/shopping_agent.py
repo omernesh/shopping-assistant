@@ -16,9 +16,28 @@ class ShoppingAgent:
         self.transport = transport
         self.pending_conflicts: dict[str, DuplicateConflict] = {}  # keyed by external_chat_id
 
+    def _should_skip_llm(self, text: str) -> bool:
+        """Quick pre-filter to avoid wasting LLM calls on obviously non-shopping messages."""
+        stripped = text.strip()
+        if not stripped:
+            return True
+        if len(stripped) > 500:
+            return True  # Too long for a shopping item
+        # Pure numbers
+        if stripped.replace(".", "").replace(",", "").isdigit():
+            return True
+        # URLs
+        if stripped.startswith("http://") or stripped.startswith("https://"):
+            return True
+        return False
+
     def handle_message(self, context: MessageContext) -> str:
         if self.transport is None:
             return self.router.handle_message(context)
+
+        # Skip LLM for obviously non-shopping messages
+        if self._should_skip_llm(context.text):
+            return ""
 
         try:
             return self._run_tool_loop(context)
