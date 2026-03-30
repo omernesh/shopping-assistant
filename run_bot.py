@@ -5,6 +5,7 @@ import logging
 from src.agent.llm_client import LLMConfig, LLMTransport
 from src.agent.shopping_agent import ShoppingAgent
 from src.app.router import ShoppingAssistantRouter
+from src.integrations.chp_client import CHPClient
 from src.channels.telegram_polling import TelegramPollingBot
 from src.config.settings import load_settings
 from src.storage.sqlite_store import SQLiteStore
@@ -22,7 +23,9 @@ def main() -> None:
 
     store = SQLiteStore(settings.db_path)
     store.initialize()
-    router = ShoppingAssistantRouter(store=store, default_city=settings.default_city)
+    chp_client = CHPClient(timeout=15)
+    router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client)
+    logging.info("CHP price lookup enabled")
 
     transport = None
     if settings.agent_enabled and settings.llm_api_key:

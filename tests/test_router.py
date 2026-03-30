@@ -137,3 +137,16 @@ def test_handle_ignores_slash_command_without_polluting_list(tmp_path: Path) -> 
 
     listed = router.handle_message(context.with_text("?"))
     assert listed == "הרשימה ריקה"
+
+def test_price_lookup_without_client(tmp_path):
+    """Price lookup returns graceful message when CHP client is not configured."""
+    router = build_router(tmp_path)
+    ctx = MessageContext(
+        platform="telegram",
+        external_chat_id="123:7",
+        user_id="42",
+        text="מחיר חלב",
+        title="Shopping Group",
+    )
+    result = router.handle_message(ctx)
+    assert "לא זמינה" in result

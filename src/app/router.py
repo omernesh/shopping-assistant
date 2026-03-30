@@ -7,6 +7,11 @@ from src.domain.parser import ParsedMessage, parse_message
 from src.domain.shopping_list import build_item
 from src.storage.sqlite_store import SQLiteStore, StoredItem
 
+import logging
+from src.integrations.chp_client import CHPClient, format_price_summary
+
+logger = logging.getLogger(__name__)
+
 
 @dataclass(frozen=True)
 class MessageContext:
@@ -39,9 +44,10 @@ class DuplicateConflict:
 
 
 class ShoppingAssistantRouter:
-    def __init__(self, store: SQLiteStore, default_city: str = "יבנה"):
+    def __init__(self, store: SQLiteStore, default_city: str = "יבנה", chp_client: CHPClient | None = None):
         self.store = store
         self.default_city = default_city
+        self.chp_client = chp_client
 
     def handle_message(self, context: MessageContext) -> str:
         parsed = parse_message(context.text)
@@ -187,7 +193,18 @@ class ShoppingAssistantRouter:
             return "פקודות: ?, תראה, קניתי <פריט>, מחק <פריט>, מחיר <פריט>"
 
         if parsed.intent == "price":
-            return f"עדיין לא חיברתי מחיר חי ל-{parsed.value}. זה הבא בתור."
+            if not self.chp_client:
+                return f"בדיקת מחירים לא זמינה כרגע"
+            try:
+                chat, _ = self._ensure_chat_and_list(context)
+                city = chat.default_city or self.default_city
+                result = self.chp_client.search(parsed.value, city=city)
+                if not result.stores and not result.online_stores:
+                    return f"לא נמצאו תוצאות מחיר עבור {parsed.value} ב{city}"
+                return format_price_summary(result, limit=5)
+            except Exception as exc:
+                logger.exception("CHP price lookup failed: %s", exc)
+                return f"שגיאה בבדיקת מחיר ל-{parsed.value}. נסה שוב מאוחר יותר."
 
         if parsed.intent == "city":
             self.store.update_chat_default_city(chat_id=chat.id, default_city=parsed.value or self.default_city)
