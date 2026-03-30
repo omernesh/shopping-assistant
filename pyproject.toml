@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shopping-assistant"
+version = "0.1.0"
+description = "Hebrew-first shopping assistant"
+requires-python = ">=3.11"
+dependencies = [
+  "requests>=2.32.0",
+  "pytest>=8.0.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

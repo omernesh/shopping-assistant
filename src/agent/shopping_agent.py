@@ -1,0 +1,114 @@
+from __future__ import annotations
+
+import json
+import logging
+from typing import Protocol
+
+from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
+from src.app.router import MessageContext, ShoppingAssistantRouter
+
+logger = logging.getLogger(__name__)
+
+MAX_TOOL_ROUNDS = 5
+
+
+class ShoppingAgent:
+    def __init__(self, router: ShoppingAssistantRouter, transport: LLMTransport | None = None):
+        self.router = router
+        self.transport = transport
+
+    def handle_message(self, context: MessageContext) -> str:
+        if self.transport is None:
+            return self.router.handle_message(context)
+
+        try:
+            return self._run_tool_loop(context)
+        except Exception as exc:
+            logger.exception("LLM agent failed, falling back to parser: %s", exc)
+            return self.router.handle_message(context)
+
+    def _run_tool_loop(self, context: MessageContext) -> str:
+        # Build context for the LLM
+        list_preview = self.router.preview_list(context)
+        default_city = self.router.get_default_city(context)
+
+        system = SYSTEM_PROMPT + f"\n\nרשימה נוכחית:\n{list_preview}\n\nעיר ברירת מחדל: {default_city}"
+
+        messages = [{"role": "user", "content": context.text}]
+
+        for _round in range(MAX_TOOL_ROUNDS):
+            response = self.transport.send(system=system, messages=messages, tools=TOOLS)
+
+            if not response.tool_calls:
+                # No tool calls — return text or empty (ignore)
+                return response.text.strip()
+
+            # Execute each tool call and build tool_result messages
+            # First, add the assistant message with tool_use blocks
+            assistant_content = []
+            if response.text:
+                assistant_content.append({"type": "text", "text": response.text})
+            for tc in response.tool_calls:
+                assistant_content.append({
+                    "type": "tool_use",
+                    "id": tc.id,
+                    "name": tc.name,
+                    "input": tc.input,
+                })
+            messages.append({"role": "assistant", "content": assistant_content})
+
+            # Execute tools and add results
+            tool_results = []
+            for tc in response.tool_calls:
+                result = self._execute_tool(context, tc)
+                tool_results.append({
+                    "type": "tool_result",
+                    "tool_use_id": tc.id,
+                    "content": result,
+                })
+            messages.append({"role": "user", "content": tool_results})
+
+        # If we exhaust rounds, return whatever text we have
+        return response.text.strip() if response.text else ""
+
+    def _execute_tool(self, context: MessageContext, tool_call: ToolCall) -> str:
+        name = tool_call.name
+        args = tool_call.input
+        logger.info("Executing tool %s with args %s", name, args)
+
+        try:
+            if name == "show_list":
+                return self.router.handle_semantic_action(context, action="show")
+            elif name == "add_item":
+                return self.router.handle_semantic_action(
+                    context, action="add",
+                    item_name=args.get("item_name", ""),
+                    quantity=args.get("quantity"),
+                )
+            elif name == "mark_purchased":
+                return self.router.handle_semantic_action(
+                    context, action="done",
+                    item_name=args.get("item_name", ""),
+                )
+            elif name == "delete_item":
+                return self.router.handle_semantic_action(
+                    context, action="delete",
+                    item_name=args.get("item_name", ""),
+                )
+            elif name == "clear_list":
+                return self.router.handle_semantic_action(context, action="clear")
+            elif name == "set_city":
+                return self.router.handle_semantic_action(
+                    context, action="city",
+                    city=args.get("city", ""),
+                )
+            elif name == "price_lookup":
+                return self.router.handle_semantic_action(
+                    context, action="price",
+                    item_name=args.get("item_name", ""),
+                )
+            else:
+                return f"Unknown tool: {name}"
+        except Exception as exc:
+            logger.exception("Tool %s failed: %s", name, exc)
+            return f"Error: {exc}"
