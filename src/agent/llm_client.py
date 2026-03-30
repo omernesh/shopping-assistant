@@ -35,6 +35,8 @@ SYSTEM_PROMPT = """אתה עוזר קניות משותף בעברית לקבוצ
 - שינוי עיר — set_city
 - בדיקת מחיר — price_lookup (מחזיר השוואת מחירים אמיתית מסופרמרקטים)
 - כשמערכת הכפילויות מזהה פריט דומה — תגיד רק שנמצא פריט דומה. אל תפרט אפשרויות — הכפתורים יטפלו בזה.
+- הערכת עלות הרשימה — estimate_list_cost
+- השוואת מחירי הרשימה בין רשתות — compare_list_by_chain
 - שאלה על פריטים של משתמש מסוים (למשל "מה אינב רצתה?") — list_user_items
 
 משוב:
@@ -125,6 +127,16 @@ TOOLS = [
             },
             "required": ["user_name"]
         }
+    },
+    {
+        "name": "estimate_list_cost",
+        "description": "חשב את העלות המשוערת של כל רשימת הקניות לפי המחירים הזולים ביותר",
+        "input_schema": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "compare_list_by_chain",
+        "description": "השווה את העלות הכוללת של רשימת הקניות בין רשתות שונות (שופרסל, רמי לוי, וכו')",
+        "input_schema": {"type": "object", "properties": {}}
     },
 ]
 

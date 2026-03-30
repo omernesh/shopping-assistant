@@ -10,6 +10,7 @@ from src.storage.sqlite_store import SQLiteStore, StoredItem
 import logging
 from src.integrations.chp_client import CHPClient, format_price_summary
 from src.integrations.feed_downloader import PriceDB, format_feed_results
+from src.integrations.price_service import PriceService, format_list_estimate, format_chain_comparison
 
 logger = logging.getLogger(__name__)
 
@@ -47,11 +48,12 @@ class DuplicateConflict:
 
 
 class ShoppingAssistantRouter:
-    def __init__(self, store: SQLiteStore, default_city: str = "יבנה", chp_client: CHPClient | None = None, price_db: PriceDB | None = None):
+    def __init__(self, store: SQLiteStore, default_city: str = "יבנה", chp_client: CHPClient | None = None, price_db: PriceDB | None = None, price_service: PriceService | None = None):
         self.store = store
         self.default_city = default_city
         self.chp_client = chp_client
         self.price_db = price_db
+        self.price_service = price_service
 
     def handle_message(self, context: MessageContext) -> str:
         parsed = parse_message(context.text)
@@ -149,6 +151,39 @@ class ShoppingAssistantRouter:
         return self.handle_semantic_action(
             context, action="add", item_name=item_name, quantity=quantity, note=note,
         )
+
+
+    def estimate_list_cost(self, context: MessageContext) -> str:
+        """Estimate total cost of the current shopping list."""
+        if not self.price_service:
+            return "שירות המחירים לא זמין כרגע"
+
+        chat, shopping_list = self._ensure_chat_and_list(context)
+        items = self.store.list_active_items(list_id=shopping_list.id)
+        if not items:
+            return "הרשימה ריקה"
+
+        city = chat.default_city or self.default_city
+        item_tuples = [(item.normalized_name, item.quantity_value or 1) for item in items]
+        estimate = self.price_service.estimate_list_cost(item_tuples, city=city)
+        return format_list_estimate(estimate)
+
+    def compare_list_by_chain(self, context: MessageContext) -> str:
+        """Compare total list cost across chains."""
+        if not self.price_service:
+            return "שירות המחירים לא זמין כרגע"
+
+        chat, shopping_list = self._ensure_chat_and_list(context)
+        items = self.store.list_active_items(list_id=shopping_list.id)
+        if not items:
+            return "הרשימה ריקה"
+
+        city = chat.default_city or self.default_city
+        item_tuples = [(item.normalized_name, item.quantity_value or 1) for item in items]
+        comparison = self.price_service.compare_list_by_chain(item_tuples, city=city)
+        if not comparison:
+            return "לא הצלחתי למצוא מחירים להשוואה"
+        return format_chain_comparison(comparison)
 
     def _ensure_chat_and_list(self, context: MessageContext):
         chat = self.store.ensure_chat(

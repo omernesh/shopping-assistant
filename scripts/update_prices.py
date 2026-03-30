@@ -24,7 +24,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger(__name__)
 
 PRICE_DB_PATH = PROJECT_ROOT / "data" / "prices.sqlite3"
-MAX_DB_SIZE = 75 * 1024 * 1024  # 75MB - rotate if exceeded
+MAX_DB_SIZE = 250 * 1024 * 1024  # 75MB - rotate if exceeded
 MAX_FILES_PER_CHAIN = 3  # Only download a few store files per chain to keep size manageable
 
 

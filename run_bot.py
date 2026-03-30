@@ -10,6 +10,7 @@ from src.channels.telegram_polling import TelegramPollingBot
 from src.config.settings import load_settings
 from src.storage.sqlite_store import SQLiteStore
 from src.integrations.feed_downloader import PriceDB
+from src.integrations.price_service import PriceService
 
 
 def main() -> None:
@@ -24,13 +25,14 @@ def main() -> None:
 
     store = SQLiteStore(settings.db_path)
     store.initialize()
-    store.rotate_if_needed(max_bytes=50 * 1024 * 1024)
+    store.rotate_if_needed(max_bytes=250 * 1024 * 1024)
     chp_client = CHPClient(timeout=15)
     price_db_path = settings.db_path.parent / "prices.sqlite3"
     price_db = PriceDB(price_db_path)
     price_db.initialize()
-    router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db)
-    price_db.rotate_if_needed(max_bytes=75 * 1024 * 1024)
+    price_service = PriceService(chp_client=chp_client, price_db=price_db)
+    router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db, price_service=price_service)
+    price_db.rotate_if_needed(max_bytes=250 * 1024 * 1024)
     size_mb = price_db.get_db_size_bytes() / (1024 * 1024)
     logging.info("Price DB loaded (%.1f MB)", size_mb)
     total_mb = (store.get_db_size_bytes() + price_db.get_db_size_bytes()) / (1024 * 1024)

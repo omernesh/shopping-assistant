@@ -124,6 +124,10 @@ class ShoppingAgent:
                     context,
                     user_name=args.get("user_name", ""),
                 )
+            elif name == "estimate_list_cost":
+                return self.router.estimate_list_cost(context)
+            elif name == "compare_list_by_chain":
+                return self.router.compare_list_by_chain(context)
             else:
                 return f"Unknown tool: {name}"
         except Exception as exc:

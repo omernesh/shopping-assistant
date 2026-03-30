@@ -112,7 +112,7 @@ class PriceDB:
             return self.db_path.stat().st_size
         return 0
 
-    def rotate_if_needed(self, max_bytes: int = 75 * 1024 * 1024) -> bool:
+    def rotate_if_needed(self, max_bytes: int = 250 * 1024 * 1024) -> bool:
         """Delete old data if DB exceeds max_bytes. Keep only latest fetch."""
         size = self.get_db_size_bytes()
         if size <= max_bytes:
