@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-
+import sqlite3
 
 from src.agent.llm_client import LLMConfig, LLMTransport
 from src.agent.shopping_agent import ShoppingAgent
@@ -35,12 +35,11 @@ def main() -> None:
     price_service = PriceService(chp_client=chp_client, price_db=price_db)
 
     # Update query planner statistics
-    import sqlite3 as _sqlite3
     for _db_path in [settings.db_path, price_db_path]:
         try:
-            with _sqlite3.connect(_db_path) as _conn:
+            with sqlite3.connect(_db_path) as _conn:
                 _conn.execute("ANALYZE")
-        except _sqlite3.Error as exc:
+        except sqlite3.Error as exc:
             logging.warning("ANALYZE failed for %s: %s (non-fatal)", _db_path, exc)
     router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db, price_service=price_service)
     price_db.rotate_if_needed(max_bytes=250 * 1024 * 1024)

@@ -107,11 +107,10 @@ class MediaHandler:
             transcription_id = create_resp.json()["id"]
 
             # Step 3: Poll for completion
-            elapsed = 0.0
+            deadline = time.monotonic() + SONIOX_MAX_WAIT
             completed = False
-            while elapsed < SONIOX_MAX_WAIT:
+            while time.monotonic() < deadline:
                 time.sleep(SONIOX_POLL_INTERVAL)
-                elapsed += SONIOX_POLL_INTERVAL
                 status_resp = self.session.get(
                     f"{SONIOX_TRANSCRIBE_URL}/{transcription_id}",
                     headers=headers,
@@ -128,7 +127,7 @@ class MediaHandler:
                     return None
 
             if not completed:
-                logger.error("Soniox transcription timed out after %.0fs (id=%s)", elapsed, transcription_id)
+                logger.error("Soniox transcription timed out after %ds (id=%s)", SONIOX_MAX_WAIT, transcription_id)
                 return None
 
             # Step 4: Get transcript
@@ -152,10 +151,10 @@ class MediaHandler:
             logger.exception("Unexpected error in Soniox transcription (file_id=%s): %s", file_id, exc)
             return None
 
-    # -- OpenAI Vision --
+    # -- Gemini Vision --
 
     def identify_product_image(self, file_id: str, caption: str | None = None) -> str | None:
-        """Download photo from Telegram and identify product via GPT vision."""
+        """Download photo from Telegram and identify product via Gemini vision."""
         if not self.gemini_api_key:
             logger.warning("GEMINI_API_KEY not configured, skipping image recognition")
             return None
@@ -172,7 +171,7 @@ class MediaHandler:
 
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
 
-        prompt_text = caption if caption else "מה המוצר בתמונה?"
+        prompt_text = "מה המוצר בתמונה?"
 
         try:
             url = GEMINI_VISION_URL.format(model=VISION_MODEL)
