@@ -83,6 +83,10 @@ def main() -> None:
         logging.warning("GEMINI_API_KEY not set -- image recognition disabled")
     if media_caps:
         logging.info("Media handler enabled: %s", ", ".join(media_caps))
+    # Warm up Gemini vision model to avoid cold start on first photo
+    if settings.gemini_api_key:
+        logging.info("Warming up Gemini vision model...")
+        media_handler.warmup_vision()
 
     agent = ShoppingAgent(router=router, transport=transport)
     bot = TelegramPollingBot(token=settings.telegram_bot_token, agent=agent, media_handler=media_handler)

@@ -249,7 +249,7 @@ class ShoppingAssistantRouter:
                 acting_user_id=context.user_id,
             )
             if item is None:
-                return f"לא מצאתי ברשימה: {parsed.value}"
+                return f"קניתי {parsed.value} — לא היה ברשימה"
             self.store.record_event(chat_id=chat.id, user_id=context.user_id, event_type="item_purchased", payload={"item_id": item.id})
             return f"סומן כנקנה: {item.normalized_name}"
 

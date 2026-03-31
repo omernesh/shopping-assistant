@@ -16,7 +16,7 @@ SONIOX_MODEL = "stt-async-preview"
 SONIOX_POLL_INTERVAL = 1.0
 SONIOX_MAX_WAIT = 60
 
-VISION_MODEL = "gemini-3.1-flash-lite-preview"
+VISION_MODEL = "gemini-2.5-flash-lite"
 VISION_MAX_TOKENS = 200
 GEMINI_VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
@@ -215,6 +215,28 @@ class MediaHandler:
         except Exception as exc:
             logger.exception("Unexpected error in Gemini vision (file_id=%s): %s", file_id, exc)
             return None
+
+    # -- Warmup --
+
+    def warmup_vision(self) -> None:
+        """Send a tiny request to Gemini to warm up the model (avoid cold start)."""
+        if not self.gemini_api_key:
+            return
+        try:
+            url = GEMINI_VISION_URL.format(model=VISION_MODEL)
+            self.session.post(
+                url,
+                params={"key": self.gemini_api_key},
+                headers={"Content-Type": "application/json"},
+                json={
+                    "contents": [{"parts": [{"text": "hi"}]}],
+                    "generationConfig": {"maxOutputTokens": 1},
+                },
+                timeout=120,
+            )
+            logger.info("Gemini vision model warmed up")
+        except Exception as exc:
+            logger.warning("Gemini warmup failed (non-critical): %s", exc)
 
     # -- Combined processing --
 
