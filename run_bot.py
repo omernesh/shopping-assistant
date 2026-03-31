@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 
-import requests
 
 from src.agent.llm_client import LLMConfig, LLMTransport
 from src.agent.shopping_agent import ShoppingAgent
@@ -72,22 +71,17 @@ def main() -> None:
     media_handler = MediaHandler(
         telegram_token=settings.telegram_bot_token,
         soniox_api_key=settings.soniox_api_key,
-        hermes_api_url=settings.hermes_api_url,
+        vision_api_key=settings.llm_api_key,  # MiniMax key for vision
     )
     media_caps = []
     if settings.soniox_api_key:
         media_caps.append("voice-to-text (Soniox)")
     else:
         logging.warning("SONIOX_API_KEY not set -- voice transcription disabled")
-    # Check if Hermes API is reachable for vision
-    try:
-        _hcheck = requests.get(f"{settings.hermes_api_url}/v1/models", timeout=5)
-        if _hcheck.status_code == 200:
-            media_caps.append("image recognition (Hermes vision)")
-        else:
-            logging.warning("Hermes API returned %d -- image recognition may not work", _hcheck.status_code)
-    except Exception:
-        logging.warning("Hermes API not reachable at %s -- image recognition disabled", settings.hermes_api_url)
+    if settings.llm_api_key:
+        media_caps.append("image recognition (MiniMax vision)")
+    else:
+        logging.warning("LLM API key not set -- image recognition disabled")
     if media_caps:
         logging.info("Media handler enabled: %s", ", ".join(media_caps))
 

@@ -16,8 +16,9 @@ SONIOX_MODEL = "stt-async-preview"
 SONIOX_POLL_INTERVAL = 1.0
 SONIOX_MAX_WAIT = 60
 
-VISION_MODEL = "hermes-agent"
+VISION_MODEL = "MiniMax-M2.7"
 VISION_MAX_TOKENS = 200
+VISION_API_URL = "https://api.minimax.io/anthropic/v1/messages"
 
 VISION_SYSTEM_PROMPT = (
     "אתה מזהה מוצרים בתמונות. "
@@ -32,11 +33,13 @@ class MediaHandler:
         self,
         telegram_token: str,
         soniox_api_key: str | None = None,
-        hermes_api_url: str = "http://localhost:8642",
+        vision_api_key: str | None = None,
+        vision_api_url: str = "https://api.minimax.io/anthropic/v1/messages",
     ):
         self.telegram_token = telegram_token
         self.soniox_api_key = soniox_api_key
-        self.hermes_api_url = hermes_api_url.rstrip("/")
+        self.vision_api_key = vision_api_key
+        self.vision_api_url = vision_api_url
         self.tg_base = f"https://api.telegram.org/bot{telegram_token}"
         self.session = requests.Session()
 
@@ -154,8 +157,8 @@ class MediaHandler:
 
     def identify_product_image(self, file_id: str, caption: str | None = None) -> str | None:
         """Download photo from Telegram and identify product via GPT vision."""
-        if not self.hermes_api_url:
-            logger.warning("Hermes API URL not configured, skipping image recognition")
+        if not self.vision_api_key:
+            logger.warning("Vision API key not configured, skipping image recognition")
             return None
 
         try:
@@ -170,53 +173,60 @@ class MediaHandler:
 
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
 
-        user_content: list[dict[str, Any]] = [
-            {
-                "type": "image_url",
-                "image_url": {"url": f"data:image/jpeg;base64,{b64_image}"},
+        # Build Anthropic messages API content (MiniMax Anthropic-compatible)
+        anthropic_content = []
+        anthropic_content.append({
+            "type": "image",
+            "source": {
+                "type": "base64",
+                "media_type": "image/jpeg",
+                "data": b64_image,
             },
-        ]
-        if caption:
-            user_content.append({"type": "text", "text": caption})
-        else:
-            user_content.append({"type": "text", "text": "מה המוצר בתמונה?"})
+        })
+        prompt_text = caption if caption else "מה המוצר בתמונה?"
+        anthropic_content.append({"type": "text", "text": prompt_text})
 
         try:
             resp = self.session.post(
-                f"{self.hermes_api_url}/v1/chat/completions",
-                headers={"Content-Type": "application/json"},
+                self.vision_api_url,
+                headers={
+                    "x-api-key": self.vision_api_key,
+                    "Content-Type": "application/json",
+                    "anthropic-version": "2023-06-01",
+                },
                 json={
                     "model": VISION_MODEL,
                     "max_tokens": VISION_MAX_TOKENS,
+                    "system": VISION_SYSTEM_PROMPT,
                     "messages": [
-                        {"role": "system", "content": VISION_SYSTEM_PROMPT},
-                        {"role": "user", "content": user_content},
+                        {"role": "user", "content": anthropic_content},
                     ],
                 },
-                timeout=60,
+                timeout=30,
             )
             resp.raise_for_status()
             data = resp.json()
-            choices = data.get("choices")
-            if not choices:
-                logger.error("Hermes vision returned no choices (file_id=%s): %s", file_id, data.get("error", data))
+            content_blocks = data.get("content")
+            if not content_blocks:
+                logger.error("Vision API returned no content (file_id=%s): %s", file_id, data.get("error", data))
                 return None
-            content = choices[0].get("message", {}).get("content")
-            if not content:
-                logger.warning("Hermes vision returned empty content (file_id=%s)", file_id)
+            # Extract text from content blocks
+            text_parts = [b.get("text", "") for b in content_blocks if b.get("type") == "text"]
+            text = " ".join(text_parts).strip()
+            if not text:
+                logger.warning("Vision API returned empty text (file_id=%s)", file_id)
                 return None
-            text = content.strip()
-            logger.info("Vision result (via Hermes): %s", text[:100])
-            return text if text else None
+            logger.info("Vision result (MiniMax): %s", text[:100])
+            return text
 
         except requests.RequestException as exc:
-            logger.error("Hermes vision network error (file_id=%s): %s", file_id, exc)
+            logger.error("Vision API network error (file_id=%s): %s", file_id, exc)
             return None
         except (KeyError, ValueError) as exc:
-            logger.error("Hermes vision response parse error (file_id=%s): %s", file_id, exc)
+            logger.error("Vision API response parse error (file_id=%s): %s", file_id, exc)
             return None
         except Exception as exc:
-            logger.exception("Unexpected error in Hermes vision (file_id=%s): %s", file_id, exc)
+            logger.exception("Unexpected error in vision (file_id=%s): %s", file_id, exc)
             return None
 
     # -- Combined processing --
