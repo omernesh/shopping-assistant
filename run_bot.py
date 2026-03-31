@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import sqlite3
+import threading
 
 from src.agent.llm_client import LLMConfig, LLMTransport
 from src.agent.shopping_agent import ShoppingAgent
@@ -83,10 +84,9 @@ def main() -> None:
         logging.warning("GEMINI_API_KEY not set -- image recognition disabled")
     if media_caps:
         logging.info("Media handler enabled: %s", ", ".join(media_caps))
-    # Warm up Gemini vision model to avoid cold start on first photo
+    # Warm up Gemini vision model in background to avoid blocking startup
     if settings.gemini_api_key:
-        logging.info("Warming up Gemini vision model...")
-        media_handler.warmup_vision()
+        threading.Thread(target=media_handler.warmup_vision, daemon=True).start()
 
     agent = ShoppingAgent(router=router, transport=transport)
     bot = TelegramPollingBot(token=settings.telegram_bot_token, agent=agent, media_handler=media_handler)
