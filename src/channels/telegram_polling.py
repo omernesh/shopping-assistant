@@ -44,6 +44,10 @@ class TTLDict:
 
 from src.agent.shopping_agent import ShoppingAgent
 from src.channels.telegram_bot import TelegramBotAdapter
+from src.domain.shopping_mode import (
+    ShoppingModeManager, ACTIVATION_PHRASES, DEACTIVATION_PHRASES,
+    ACTIVATE_MSG, DEACTIVATE_MSG,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +92,7 @@ class TelegramUpdate:
 
 
 class TelegramPollingBot:
-    def __init__(self, token: str, agent: ShoppingAgent, timeout: int = 30, media_handler: Any = None):
+    def __init__(self, token: str, agent: ShoppingAgent, timeout: int = 30, media_handler: Any = None, shopping_mode: ShoppingModeManager | None = None):
         self.token = token
         self.agent = agent
         self.timeout = timeout
@@ -97,6 +101,7 @@ class TelegramPollingBot:
         self.session = requests.Session()
         self.pending_conflicts: TTLDict = TTLDict(ttl_seconds=600, max_size=200)
         self.media_handler = media_handler
+        self.shopping_mode = shopping_mode or ShoppingModeManager()
 
     def get_me(self) -> dict[str, Any]:
         response = self.session.get(f"{self.base_url}/getMe", timeout=15)
@@ -187,10 +192,26 @@ class TelegramPollingBot:
             return
 
         text = message["text"].strip()
+
+        # Build chat key for shopping mode (per-chat)
+        chat_key = str(chat_id) + (f":{thread_id}" if thread_id else "")
+
+        # Check for shopping mode activation/deactivation phrases
+        for phrase in ACTIVATION_PHRASES:
+            if phrase in text:
+                self.shopping_mode.activate(chat_key)
+                self.send_message(chat_id=chat_id, text=ACTIVATE_MSG, message_thread_id=thread_id)
+                return
+        for phrase in DEACTIVATION_PHRASES:
+            if phrase in text:
+                self.shopping_mode.deactivate(chat_key)
+                self.send_message(chat_id=chat_id, text=DEACTIVATE_MSG, message_thread_id=thread_id)
+                return
+
         context = self.adapter.normalize_message(update).to_message_context()
 
         # Handle slash commands directly (no LLM round-trip)
-        slash_response = self._handle_slash_command(text, context)
+        slash_response = self._handle_slash_command(text, context, chat_key=chat_key)
         if slash_response is not None:
             if slash_response:
                 self.send_message(
@@ -199,6 +220,12 @@ class TelegramPollingBot:
                     message_thread_id=thread_id,
                 )
             return
+
+        # Shopping mode: rewrite text as purchase intent
+        if self.shopping_mode.is_active(chat_key):
+            self.shopping_mode.touch(chat_key)
+            text_rewritten = f"קניתי {text}"
+            context = context.with_text(text_rewritten)
 
         # Regular message -- send to agent
         self._send_to_agent(context, message)
@@ -223,6 +250,12 @@ class TelegramPollingBot:
                 message_thread_id=thread_id,
             )
             return
+
+        # Shopping mode: rewrite voice transcription as purchase
+        chat_key = str(chat_id) + (f":{thread_id}" if thread_id else "")
+        if self.shopping_mode.is_active(chat_key):
+            self.shopping_mode.touch(chat_key)
+            transcribed = f"קניתי {transcribed}"
 
         # Build context with transcribed text
         context = self.adapter.normalize_media_message(message, text_override=transcribed).to_message_context()
@@ -300,7 +333,7 @@ class TelegramPollingBot:
             message_thread_id=thread_id,
         )
 
-    def _handle_slash_command(self, text: str, context: Any) -> str | None:
+    def _handle_slash_command(self, text: str, context: Any, chat_key: str = "") -> str | None:
         if not text.startswith("/"):
             return None
 
@@ -319,6 +352,10 @@ class TelegramPollingBot:
                 city = self.agent.router.get_default_city(context)
                 return f"\u05d4\u05e2\u05d9\u05e8 \u05d4\u05e0\u05d5\u05db\u05d7\u05d9\u05ea: {city}\n\u05dc\u05e9\u05d9\u05e0\u05d5\u05d9: /city <\u05e9\u05dd \u05e2\u05d9\u05e8>"
             return self.agent.router.handle_semantic_action(context, action="city", city=args)
+        elif command == "/shop":
+            if self.shopping_mode.toggle(chat_key):
+                return ACTIVATE_MSG
+            return DEACTIVATE_MSG
         elif command == "/start":
             return START_TEXT
 
