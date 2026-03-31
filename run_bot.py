@@ -7,6 +7,7 @@ from src.agent.shopping_agent import ShoppingAgent
 from src.app.router import ShoppingAssistantRouter
 from src.integrations.chp_client import CHPClient
 from src.channels.telegram_polling import TelegramPollingBot
+from src.channels.media_handler import MediaHandler
 from src.config.settings import load_settings
 from src.storage.sqlite_store import SQLiteStore
 from src.integrations.feed_downloader import PriceDB
@@ -63,8 +64,24 @@ def main() -> None:
     else:
         logging.warning("Semantic agent disabled or missing API key; using parser fallback only")
 
+    # Media handler for voice and image processing
+    media_handler = MediaHandler(
+        telegram_token=settings.telegram_bot_token,
+        soniox_api_key=settings.soniox_api_key,
+        openai_api_key=settings.openai_api_key,
+    )
+    media_caps = []
+    if settings.soniox_api_key:
+        media_caps.append("voice-to-text (Soniox)")
+    if settings.openai_api_key:
+        media_caps.append("image recognition (GPT Vision)")
+    if media_caps:
+        logging.info("Media handler enabled: %s", ", ".join(media_caps))
+    else:
+        logging.warning("Media handler: no API keys configured (SONIOX_API_KEY, OPENAI_API_KEY)")
+
     agent = ShoppingAgent(router=router, transport=transport)
-    bot = TelegramPollingBot(token=settings.telegram_bot_token, agent=agent)
+    bot = TelegramPollingBot(token=settings.telegram_bot_token, agent=agent, media_handler=media_handler)
     me = bot.get_me()
     logging.info("Connected to Telegram bot @%s (%s)", me.get("username"), me.get("id"))
     bot.set_commands()

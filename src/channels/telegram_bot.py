@@ -53,3 +53,19 @@ class TelegramBotAdapter:
             title=chat.get("title"),
             user_name=user_name,
         )
+
+    def normalize_media_message(self, message: dict, text_override: str) -> TelegramMessageContext:
+        """Normalize a media message (voice/photo), substituting detected text."""
+        chat = message["chat"]
+        from_user = message.get("from", {})
+        first = from_user.get("first_name", "")
+        last = from_user.get("last_name", "")
+        user_name = f"{first} {last}".strip() or from_user.get("username") or None
+        return TelegramMessageContext(
+            chat_id=chat["id"],
+            thread_id=message.get("message_thread_id"),
+            user_id=message["from"]["id"],
+            text=text_override,
+            title=chat.get("title"),
+            user_name=user_name,
+        )

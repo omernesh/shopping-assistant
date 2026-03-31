@@ -48,32 +48,36 @@ from src.channels.telegram_bot import TelegramBotAdapter
 logger = logging.getLogger(__name__)
 
 BOT_COMMANDS = [
-    {"command": "list", "description": "הצג את רשימת הקניות"},
-    {"command": "clear", "description": "נקה את כל הרשימה"},
-    {"command": "help", "description": "מה אני יכול לעשות?"},
-    {"command": "city", "description": "שנה עיר ברירת מחדל"},
+    {"command": "list", "description": "\u05d4\u05e6\u05d2 \u05d0\u05ea \u05e8\u05e9\u05d9\u05de\u05ea \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea"},
+    {"command": "clear", "description": "\u05e0\u05e7\u05d4 \u05d0\u05ea \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d4"},
+    {"command": "help", "description": "\u05de\u05d4 \u05d0\u05e0\u05d9 \u05d9\u05db\u05d5\u05dc \u05dc\u05e2\u05e9\u05d5\u05ea?"},
+    {"command": "city", "description": "\u05e9\u05e0\u05d4 \u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05de\u05d7\u05d3\u05dc"},
 ]
 
 HELP_TEXT = (
-    "אני עוזר קניות לקבוצה הזו. ככה עובדים איתי:\n\n"
-    "שלחו שם של מוצר ואני אוסיף אותו לרשימה.\n"
-    "כמות? כתבו מספר לפני: 2 חלב\n\n"
-    "פקודות:\n"
-    "/list \u2014 הצגת הרשימה\n"
-    "/clear \u2014 ניקוי כל הרשימה\n"
-    "/city <עיר> \u2014 שינוי עיר ברירת מחדל\n"
-    "/help \u2014 העזרה הזו\n\n"
-    "אפשר גם בשפה טבעית:\n"
-    '\"קניתי חלב\" \u2014 סימון כנקנה\n'
-    '\"מחק לחם\" \u2014 מחיקה מהרשימה\n'
-    '\"מה יש ברשימה\" \u2014 הצגת הרשימה\n'
-    '\"מחיר חלב\" \u2014 בדיקת מחיר'
+    "\u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05e7\u05e0\u05d9\u05d5\u05ea \u05dc\u05e7\u05d1\u05d5\u05e6\u05d4 \u05d4\u05d6\u05d5. \u05db\u05db\u05d4 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd \u05d0\u05d9\u05ea\u05d9:\n\n"
+    "\u05e9\u05dc\u05d7\u05d5 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05e0\u05d9 \u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"
+    "\u05db\u05de\u05d5\u05ea? \u05db\u05ea\u05d1\u05d5 \u05de\u05e1\u05e4\u05e8 \u05dc\u05e4\u05e0\u05d9: 2 \u05d7\u05dc\u05d1\n\n"
+    "\u05e4\u05e7\u05d5\u05d3\u05d5\u05ea:\n"
+    "/list \u2014 \u05d4\u05e6\u05d2\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n"
+    "/clear \u2014 \u05e0\u05d9\u05e7\u05d5\u05d9 \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n"
+    "/city <\u05e2\u05d9\u05e8> \u2014 \u05e9\u05d9\u05e0\u05d5\u05d9 \u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05de\u05d7\u05d3\u05dc\n"
+    "/help \u2014 \u05d4\u05e2\u05d6\u05e8\u05d4 \u05d4\u05d6\u05d5\n\n"
+    "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05dd \u05d1\u05e9\u05e4\u05d4 \u05d8\u05d1\u05e2\u05d9\u05ea:\n"
+    '"\u05e7\u05e0\u05d9\u05ea\u05d9 \u05d7\u05dc\u05d1" \u2014 \u05e1\u05d9\u05de\u05d5\u05df \u05db\u05e0\u05e7\u05e0\u05d4\n'
+    '"\u05de\u05d7\u05e7 \u05dc\u05d7\u05dd" \u2014 \u05de\u05d7\u05d9\u05e7\u05d4 \u05de\u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n'
+    '"\u05de\u05d4 \u05d9\u05e9 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4" \u2014 \u05d4\u05e6\u05d2\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n'
+    '"\u05de\u05d7\u05d9\u05e8 \u05d7\u05dc\u05d1" \u2014 \u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05d7\u05d9\u05e8\n\n'
+    "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05dd \u05dc\u05e9\u05dc\u05d5\u05d7:\n"
+    "\u05d4\u05d5\u05d3\u05e2\u05d4 \u05e7\u05d5\u05dc\u05d9\u05ea \u2014 \u05d0\u05ea\u05de\u05dc\u05dc \u05d5\u05d0\u05d8\u05e4\u05dc \u05d1\u05d1\u05e7\u05e9\u05d4\n"
+    "\u05ea\u05de\u05d5\u05e0\u05d4 \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u2014 \u05d0\u05d6\u05d4\u05d4 \u05d5\u05d0\u05d5\u05e1\u05d9\u05e3 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4"
 )
 
 START_TEXT = (
-    "שלום! אני עוזר הקניות של הקבוצה.\n"
-    "שלחו שם של מוצר ואני אוסיף אותו לרשימה.\n"
-    "לעזרה: /help"
+    "\u05e9\u05dc\u05d5\u05dd! \u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea \u05e9\u05dc \u05d4\u05e7\u05d1\u05d5\u05e6\u05d4.\n"
+    "\u05e9\u05dc\u05d7\u05d5 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05e0\u05d9 \u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"
+    "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05dd \u05d4\u05d5\u05d3\u05e2\u05d5\u05ea \u05e7\u05d5\u05dc\u05d9\u05d5\u05ea \u05d5\u05ea\u05de\u05d5\u05e0\u05d5\u05ea!\n"
+    "\u05dc\u05e2\u05d6\u05e8\u05d4: /help"
 )
 
 
@@ -84,7 +88,7 @@ class TelegramUpdate:
 
 
 class TelegramPollingBot:
-    def __init__(self, token: str, agent: ShoppingAgent, timeout: int = 30):
+    def __init__(self, token: str, agent: ShoppingAgent, timeout: int = 30, media_handler: Any = None):
         self.token = token
         self.agent = agent
         self.timeout = timeout
@@ -92,6 +96,7 @@ class TelegramPollingBot:
         self.base_url = f"https://api.telegram.org/bot{token}"
         self.session = requests.Session()
         self.pending_conflicts: TTLDict = TTLDict(ttl_seconds=600, max_size=200)
+        self.media_handler = media_handler
 
     def get_me(self) -> dict[str, Any]:
         response = self.session.get(f"{self.base_url}/getMe", timeout=15)
@@ -161,6 +166,23 @@ class TelegramPollingBot:
             return
         if message.get("from", {}).get("is_bot"):
             return
+
+        chat_id = message["chat"]["id"]
+        thread_id = message.get("message_thread_id")
+
+        # -- Voice / audio message --
+        voice = message.get("voice") or message.get("audio")
+        photo_list = message.get("photo")
+
+        if voice and self.media_handler:
+            self._handle_voice_message(message, voice, photo_list)
+            return
+
+        if photo_list and self.media_handler:
+            self._handle_photo_message(message, photo_list)
+            return
+
+        # -- Text message (original flow) --
         if not message.get("text"):
             return
 
@@ -172,13 +194,77 @@ class TelegramPollingBot:
         if slash_response is not None:
             if slash_response:
                 self.send_message(
-                    chat_id=message["chat"]["id"],
+                    chat_id=chat_id,
                     text=slash_response,
-                    message_thread_id=message.get("message_thread_id"),
+                    message_thread_id=thread_id,
                 )
             return
 
-        # Regular message — send to agent
+        # Regular message -- send to agent
+        self._send_to_agent(context, message)
+
+    def _handle_voice_message(self, message: dict, voice: dict, photo_list: list | None) -> None:
+        """Handle incoming voice/audio message."""
+        chat_id = message["chat"]["id"]
+        thread_id = message.get("message_thread_id")
+        file_id = voice.get("file_id")
+
+        if not file_id:
+            return
+
+        logger.info("Processing voice message from user %s", message.get("from", {}).get("id"))
+
+        transcribed = self.media_handler.process_voice_message(file_id)
+        if not transcribed:
+            self.send_message(
+                chat_id=chat_id,
+                text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05ea\u05de\u05dc\u05dc \u05d0\u05ea \u05d4\u05d4\u05d5\u05d3\u05e2\u05d4 \u05d4\u05e7\u05d5\u05dc\u05d9\u05ea",
+                message_thread_id=thread_id,
+            )
+            return
+
+        # Build context with transcribed text
+        context = self.adapter.normalize_media_message(message, text_override=transcribed).to_message_context()
+        logger.info("Voice transcribed: %s", transcribed[:100])
+
+        self._send_to_agent(context, message)
+
+    def _handle_photo_message(self, message: dict, photo_list: list) -> None:
+        """Handle incoming photo message."""
+        chat_id = message["chat"]["id"]
+        thread_id = message.get("message_thread_id")
+
+        # Get highest resolution photo (last in the array)
+        best_photo = photo_list[-1]
+        file_id = best_photo.get("file_id")
+        if not file_id:
+            return
+
+        caption = message.get("caption", "").strip() or None
+
+        logger.info("Processing photo message from user %s (caption: %s)",
+                     message.get("from", {}).get("id"), caption[:50] if caption else "none")
+
+        result_text = self.media_handler.process_photo_message(file_id, caption=caption)
+        if not result_text:
+            self.send_message(
+                chat_id=chat_id,
+                text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d6\u05d4\u05d5\u05ea \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8 \u05d1\u05ea\u05de\u05d5\u05e0\u05d4",
+                message_thread_id=thread_id,
+            )
+            return
+
+        # Build context with identified product text
+        context = self.adapter.normalize_media_message(message, text_override=result_text).to_message_context()
+        logger.info("Photo identified: %s", result_text[:100])
+
+        self._send_to_agent(context, message)
+
+    def _send_to_agent(self, context: Any, message: dict) -> None:
+        """Send context to agent and handle response (shared by text, voice, photo)."""
+        chat_id = message["chat"]["id"]
+        thread_id = message.get("message_thread_id")
+
         response_text = self.agent.handle_message(context)
         if not response_text:
             return
@@ -187,10 +273,10 @@ class TelegramPollingBot:
         conflict = self.agent.pending_conflicts.pop(context.external_chat_id, None)
         if conflict:
             self._send_duplicate_keyboard(
-                chat_id=message["chat"]["id"],
+                chat_id=chat_id,
                 text=response_text,
                 conflict=conflict,
-                message_thread_id=message.get("message_thread_id"),
+                message_thread_id=thread_id,
             )
             return
 
@@ -198,18 +284,18 @@ class TelegramPollingBot:
         price_result = self.agent.pending_price_choices.pop(context.external_chat_id, None)
         if price_result and price_result.needs_disambiguation:
             self._send_price_picker(
-                chat_id=message["chat"]["id"],
+                chat_id=chat_id,
                 text=response_text,
                 choices=price_result.choices,
                 query=price_result.query,
-                message_thread_id=message.get("message_thread_id"),
+                message_thread_id=thread_id,
             )
             return
 
         self.send_message(
-            chat_id=message["chat"]["id"],
+            chat_id=chat_id,
             text=response_text,
-            message_thread_id=message.get("message_thread_id"),
+            message_thread_id=thread_id,
         )
 
     def _handle_slash_command(self, text: str, context: Any) -> str | None:
@@ -229,12 +315,12 @@ class TelegramPollingBot:
         elif command == "/city":
             if not args:
                 city = self.agent.router.get_default_city(context)
-                return f"העיר הנוכחית: {city}\nלשינוי: /city <שם עיר>"
+                return f"\u05d4\u05e2\u05d9\u05e8 \u05d4\u05e0\u05d5\u05db\u05d7\u05d9\u05ea: {city}\n\u05dc\u05e9\u05d9\u05e0\u05d5\u05d9: /city <\u05e9\u05dd \u05e2\u05d9\u05e8>"
             return self.agent.router.handle_semantic_action(context, action="city", city=args)
         elif command == "/start":
             return START_TEXT
 
-        return None  # Unknown slash command — let agent handle
+        return None  # Unknown slash command -- let agent handle
 
 
     def _send_duplicate_keyboard(
@@ -255,16 +341,16 @@ class TelegramPollingBot:
         buttons: list[list[dict]] = []
         # Always show merge option
         if nq and eq:
-            buttons.append([{"text": f"אחד (סה\"כ {merged_display})", "callback_data": f"dup:merge:{conflict_id}"}])
+            buttons.append([{"text": f'\u05d0\u05d7\u05d3 (\u05e1\u05d4"\u05db {merged_display})', "callback_data": f"dup:merge:{conflict_id}"}])
         elif nq:
-            buttons.append([{"text": f"אחד ({new_display})", "callback_data": f"dup:merge:{conflict_id}"}])
+            buttons.append([{"text": f"\u05d0\u05d7\u05d3 ({new_display})", "callback_data": f"dup:merge:{conflict_id}"}])
         else:
-            buttons.append([{"text": "אחד", "callback_data": f"dup:merge:{conflict_id}"}])
-        
+            buttons.append([{"text": "\u05d0\u05d7\u05d3", "callback_data": f"dup:merge:{conflict_id}"}])
+
         if nq:
-            buttons.append([{"text": f"עדכן ל-{new_display}", "callback_data": f"dup:update:{conflict_id}"}])
-        buttons.append([{"text": "הוסף בנפרד", "callback_data": f"dup:add:{conflict_id}"}])
-        buttons.append([{"text": "בטל", "callback_data": f"dup:cancel:{conflict_id}"}])
+            buttons.append([{"text": f"\u05e2\u05d3\u05db\u05df \u05dc-{new_display}", "callback_data": f"dup:update:{conflict_id}"}])
+        buttons.append([{"text": "\u05d4\u05d5\u05e1\u05e3 \u05d1\u05e0\u05e4\u05e8\u05d3", "callback_data": f"dup:add:{conflict_id}"}])
+        buttons.append([{"text": "\u05d1\u05d8\u05dc", "callback_data": f"dup:cancel:{conflict_id}"}])
 
         payload: dict[str, Any] = {
             "chat_id": chat_id,
@@ -314,7 +400,7 @@ class TelegramPollingBot:
             self._process_callback(callback)
         except Exception as exc:
             logger.exception("Callback handling failed: %s", exc)
-            self._answer_callback(callback_id, "שגיאה — נסה שוב")
+            self._answer_callback(callback_id, "\u05e9\u05d2\u05d9\u05d0\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")
 
     def _process_callback(self, callback: dict[str, Any]) -> None:
         callback_id = callback["id"]
