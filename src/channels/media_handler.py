@@ -17,6 +17,7 @@ SONIOX_POLL_INTERVAL = 1.0
 SONIOX_MAX_WAIT = 60
 
 VISION_MODEL = "hermes-agent"
+VISION_MAX_TOKENS = 200
 
 VISION_SYSTEM_PROMPT = (
     "אתה מזהה מוצרים בתמונות. "
@@ -49,7 +50,10 @@ class MediaHandler:
             timeout=15,
         )
         resp.raise_for_status()
-        file_path = resp.json()["result"]["file_path"]
+        payload = resp.json()
+        if not payload.get("ok"):
+            raise RuntimeError(f"Telegram getFile failed: {payload.get('description', payload)}")
+        file_path = payload["result"]["file_path"]
         dl_url = f"https://api.telegram.org/file/bot{self.telegram_token}/{file_path}"
         dl_resp = self.session.get(dl_url, timeout=30)
         dl_resp.raise_for_status()
@@ -67,6 +71,10 @@ class MediaHandler:
             audio_bytes = self._download_telegram_file(file_id)
         except Exception as exc:
             logger.exception("Failed to download voice file %s: %s", file_id, exc)
+            return None
+
+        if not audio_bytes:
+            logger.error("Downloaded voice file is empty (file_id=%s)", file_id)
             return None
 
         headers = {"Authorization": f"Bearer {self.soniox_api_key}"}
@@ -98,6 +106,7 @@ class MediaHandler:
 
             # Step 3: Poll for completion
             elapsed = 0.0
+            completed = False
             while elapsed < SONIOX_MAX_WAIT:
                 time.sleep(SONIOX_POLL_INTERVAL)
                 elapsed += SONIOX_POLL_INTERVAL
@@ -109,11 +118,16 @@ class MediaHandler:
                 status_resp.raise_for_status()
                 status = status_resp.json().get("status")
                 if status == "completed":
+                    completed = True
                     break
                 if status == "error":
                     err = status_resp.json().get("error_message", "unknown")
                     logger.error("Soniox transcription error: %s", err)
                     return None
+
+            if not completed:
+                logger.error("Soniox transcription timed out after %.0fs (id=%s)", elapsed, transcription_id)
+                return None
 
             # Step 4: Get transcript
             transcript_resp = self.session.get(
@@ -126,8 +140,14 @@ class MediaHandler:
             logger.info("Soniox transcription result: %s", text[:100])
             return text if text else None
 
+        except requests.RequestException as exc:
+            logger.error("Soniox network error (file_id=%s): %s", file_id, exc)
+            return None
+        except (KeyError, ValueError) as exc:
+            logger.error("Soniox response parse error (file_id=%s): %s", file_id, exc)
+            return None
         except Exception as exc:
-            logger.exception("Soniox transcription failed: %s", exc)
+            logger.exception("Unexpected error in Soniox transcription (file_id=%s): %s", file_id, exc)
             return None
 
     # -- OpenAI Vision --
@@ -142,6 +162,10 @@ class MediaHandler:
             image_bytes = self._download_telegram_file(file_id)
         except Exception as exc:
             logger.exception("Failed to download photo %s: %s", file_id, exc)
+            return None
+
+        if not image_bytes:
+            logger.error("Downloaded photo is empty (file_id=%s)", file_id)
             return None
 
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
@@ -163,7 +187,7 @@ class MediaHandler:
                 headers={"Content-Type": "application/json"},
                 json={
                     "model": VISION_MODEL,
-                    "max_tokens": 200,
+                    "max_tokens": VISION_MAX_TOKENS,
                     "messages": [
                         {"role": "system", "content": VISION_SYSTEM_PROMPT},
                         {"role": "user", "content": user_content},
@@ -172,12 +196,27 @@ class MediaHandler:
                 timeout=60,
             )
             resp.raise_for_status()
-            text = resp.json()["choices"][0]["message"]["content"].strip()
+            data = resp.json()
+            choices = data.get("choices")
+            if not choices:
+                logger.error("Hermes vision returned no choices (file_id=%s): %s", file_id, data.get("error", data))
+                return None
+            content = choices[0].get("message", {}).get("content")
+            if not content:
+                logger.warning("Hermes vision returned empty content (file_id=%s)", file_id)
+                return None
+            text = content.strip()
             logger.info("Vision result (via Hermes): %s", text[:100])
             return text if text else None
 
+        except requests.RequestException as exc:
+            logger.error("Hermes vision network error (file_id=%s): %s", file_id, exc)
+            return None
+        except (KeyError, ValueError) as exc:
+            logger.error("Hermes vision response parse error (file_id=%s): %s", file_id, exc)
+            return None
         except Exception as exc:
-            logger.exception("Hermes vision request failed: %s", exc)
+            logger.exception("Unexpected error in Hermes vision (file_id=%s): %s", file_id, exc)
             return None
 
     # -- Combined processing --
@@ -196,13 +235,13 @@ class MediaHandler:
 
         # If there is a caption with action intent, combine them
         if caption:
-            caption_lower = caption.strip()
+            caption_text = caption.strip()
             # If caption has a placeholder like "this", replace with product name
             for placeholder in ["את זה", "אותו", "אותה", "זה"]:
-                if placeholder in caption_lower:
-                    return caption_lower.replace(placeholder, product, 1)
+                if placeholder in caption_text:
+                    return caption_text.replace(placeholder, product, 1)
             # Caption has specific text -- return caption + product context
-            return f"{caption_lower} {product}"
+            return f"{caption_text} {product}"
 
         # No caption -- default to add action
         return product

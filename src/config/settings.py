@@ -16,6 +16,7 @@ DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
 HERMES_ENV_PATH = Path.home() / ".hermes" / ".env"
 DEFAULT_LLM_MODEL = "MiniMax-M2.7"
 DEFAULT_LLM_BASE_URL = "https://api.minimax.io/anthropic"
+DEFAULT_HERMES_API_URL = "http://localhost:8642"
 
 
 @dataclass(frozen=True)
@@ -32,7 +33,7 @@ class Settings:
     llm_base_url: str = DEFAULT_LLM_BASE_URL
     agent_enabled: bool = True
     soniox_api_key: str | None = None
-    openai_api_key: str | None = None
+    hermes_api_url: str = DEFAULT_HERMES_API_URL
 
 
 def _load_dotenv(env_path: Path) -> None:
@@ -77,5 +78,5 @@ def load_settings() -> Settings:
         llm_base_url=os.getenv("LLM_BASE_URL", DEFAULT_LLM_BASE_URL),
         agent_enabled=_env_bool("SHOPPING_ASSISTANT_AGENT_ENABLED", True),
         soniox_api_key=os.getenv("SONIOX_API_KEY"),
-        openai_api_key=os.getenv("OPENAI_API_KEY"),
+        hermes_api_url=os.getenv("HERMES_API_URL", DEFAULT_HERMES_API_URL),
     )

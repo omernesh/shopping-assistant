@@ -175,7 +175,7 @@ class TelegramPollingBot:
         photo_list = message.get("photo")
 
         if voice and self.media_handler:
-            self._handle_voice_message(message, voice, photo_list)
+            self._handle_voice_message(message, voice)
             return
 
         if photo_list and self.media_handler:
@@ -203,13 +203,14 @@ class TelegramPollingBot:
         # Regular message -- send to agent
         self._send_to_agent(context, message)
 
-    def _handle_voice_message(self, message: dict, voice: dict, photo_list: list | None) -> None:
+    def _handle_voice_message(self, message: dict, voice: dict) -> None:
         """Handle incoming voice/audio message."""
         chat_id = message["chat"]["id"]
         thread_id = message.get("message_thread_id")
         file_id = voice.get("file_id")
 
         if not file_id:
+            logger.warning("Voice message from user %s has no file_id", message.get("from", {}).get("id"))
             return
 
         logger.info("Processing voice message from user %s", message.get("from", {}).get("id"))
@@ -238,6 +239,7 @@ class TelegramPollingBot:
         best_photo = photo_list[-1]
         file_id = best_photo.get("file_id")
         if not file_id:
+            logger.warning("Photo message from user %s has no file_id", message.get("from", {}).get("id"))
             return
 
         caption = message.get("caption", "").strip() or None
@@ -326,7 +328,6 @@ class TelegramPollingBot:
     def _send_duplicate_keyboard(
         self, chat_id: int, text: str, conflict: Any, message_thread_id: int | None = None,
     ) -> None:
-        from src.app.router import DuplicateConflict
 
         conflict_id = uuid.uuid4().hex[:8]
         self.pending_conflicts[conflict_id] = conflict
@@ -393,6 +394,7 @@ class TelegramPollingBot:
             response.raise_for_status()
         except Exception as exc:
             logger.warning("Failed to send price picker: %s", exc)
+            self.send_message(chat_id=chat_id, text=text, message_thread_id=message_thread_id)
 
     def _handle_callback(self, callback: dict[str, Any]) -> None:
         callback_id = callback["id"]

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import logging
 
+import requests
+
 from src.agent.llm_client import LLMConfig, LLMTransport
 from src.agent.shopping_agent import ShoppingAgent
 from src.app.router import ShoppingAssistantRouter
@@ -36,9 +38,11 @@ def main() -> None:
     # Update query planner statistics
     import sqlite3 as _sqlite3
     for _db_path in [settings.db_path, price_db_path]:
-        _conn = _sqlite3.connect(_db_path)
-        _conn.execute("ANALYZE")
-        _conn.close()
+        try:
+            with _sqlite3.connect(_db_path) as _conn:
+                _conn.execute("ANALYZE")
+        except _sqlite3.Error as exc:
+            logging.warning("ANALYZE failed for %s: %s (non-fatal)", _db_path, exc)
     router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db, price_service=price_service)
     price_db.rotate_if_needed(max_bytes=250 * 1024 * 1024)
     size_mb = price_db.get_db_size_bytes() / (1024 * 1024)
@@ -68,17 +72,24 @@ def main() -> None:
     media_handler = MediaHandler(
         telegram_token=settings.telegram_bot_token,
         soniox_api_key=settings.soniox_api_key,
-        hermes_api_url="http://localhost:8642",
+        hermes_api_url=settings.hermes_api_url,
     )
     media_caps = []
     if settings.soniox_api_key:
         media_caps.append("voice-to-text (Soniox)")
-    if True:  # Hermes API always available locally
-        media_caps.append("image recognition (GPT Vision)")
+    else:
+        logging.warning("SONIOX_API_KEY not set -- voice transcription disabled")
+    # Check if Hermes API is reachable for vision
+    try:
+        _hcheck = requests.get(f"{settings.hermes_api_url}/v1/models", timeout=5)
+        if _hcheck.status_code == 200:
+            media_caps.append("image recognition (Hermes vision)")
+        else:
+            logging.warning("Hermes API returned %d -- image recognition may not work", _hcheck.status_code)
+    except Exception:
+        logging.warning("Hermes API not reachable at %s -- image recognition disabled", settings.hermes_api_url)
     if media_caps:
         logging.info("Media handler enabled: %s", ", ".join(media_caps))
-    else:
-        logging.warning("Media handler: no API keys configured (SONIOX_API_KEY, OPENAI_API_KEY)")
 
     agent = ShoppingAgent(router=router, transport=transport)
     bot = TelegramPollingBot(token=settings.telegram_bot_token, agent=agent, media_handler=media_handler)
