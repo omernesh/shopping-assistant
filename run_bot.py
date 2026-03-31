@@ -71,17 +71,17 @@ def main() -> None:
     media_handler = MediaHandler(
         telegram_token=settings.telegram_bot_token,
         soniox_api_key=settings.soniox_api_key,
-        vision_api_key=settings.llm_api_key,  # MiniMax key for vision
+        gemini_api_key=settings.gemini_api_key,
     )
     media_caps = []
     if settings.soniox_api_key:
         media_caps.append("voice-to-text (Soniox)")
     else:
         logging.warning("SONIOX_API_KEY not set -- voice transcription disabled")
-    if settings.llm_api_key:
-        media_caps.append("image recognition (MiniMax vision)")
+    if settings.gemini_api_key:
+        media_caps.append("image recognition (Gemini Flash)")
     else:
-        logging.warning("LLM API key not set -- image recognition disabled")
+        logging.warning("GEMINI_API_KEY not set -- image recognition disabled")
     if media_caps:
         logging.info("Media handler enabled: %s", ", ".join(media_caps))
 

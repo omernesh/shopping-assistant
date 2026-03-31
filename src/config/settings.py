@@ -34,6 +34,7 @@ class Settings:
     agent_enabled: bool = True
     soniox_api_key: str | None = None
     hermes_api_url: str = DEFAULT_HERMES_API_URL
+    gemini_api_key: str | None = None
 
 
 def _load_dotenv(env_path: Path) -> None:
@@ -79,4 +80,5 @@ def load_settings() -> Settings:
         agent_enabled=_env_bool("SHOPPING_ASSISTANT_AGENT_ENABLED", True),
         soniox_api_key=os.getenv("SONIOX_API_KEY"),
         hermes_api_url=os.getenv("HERMES_API_URL", DEFAULT_HERMES_API_URL),
+        gemini_api_key=os.getenv("GEMINI_API_KEY"),
     )

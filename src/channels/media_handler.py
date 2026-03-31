@@ -16,9 +16,9 @@ SONIOX_MODEL = "stt-async-preview"
 SONIOX_POLL_INTERVAL = 1.0
 SONIOX_MAX_WAIT = 60
 
-VISION_MODEL = "MiniMax-M2.7"
+VISION_MODEL = "gemini-2.0-flash"
 VISION_MAX_TOKENS = 200
-VISION_API_URL = "https://api.minimax.io/anthropic/v1/messages"
+GEMINI_VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 VISION_SYSTEM_PROMPT = (
     "אתה מזהה מוצרים בתמונות. "
@@ -33,13 +33,11 @@ class MediaHandler:
         self,
         telegram_token: str,
         soniox_api_key: str | None = None,
-        vision_api_key: str | None = None,
-        vision_api_url: str = "https://api.minimax.io/anthropic/v1/messages",
+        gemini_api_key: str | None = None,
     ):
         self.telegram_token = telegram_token
         self.soniox_api_key = soniox_api_key
-        self.vision_api_key = vision_api_key
-        self.vision_api_url = vision_api_url
+        self.gemini_api_key = gemini_api_key
         self.tg_base = f"https://api.telegram.org/bot{telegram_token}"
         self.session = requests.Session()
 
@@ -157,8 +155,8 @@ class MediaHandler:
 
     def identify_product_image(self, file_id: str, caption: str | None = None) -> str | None:
         """Download photo from Telegram and identify product via GPT vision."""
-        if not self.vision_api_key:
-            logger.warning("Vision API key not configured, skipping image recognition")
+        if not self.gemini_api_key:
+            logger.warning("GEMINI_API_KEY not configured, skipping image recognition")
             return None
 
         try:
@@ -173,60 +171,48 @@ class MediaHandler:
 
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
 
-        # Build Anthropic messages API content (MiniMax Anthropic-compatible)
-        anthropic_content = []
-        anthropic_content.append({
-            "type": "image",
-            "source": {
-                "type": "base64",
-                "media_type": "image/jpeg",
-                "data": b64_image,
-            },
-        })
         prompt_text = caption if caption else "מה המוצר בתמונה?"
-        anthropic_content.append({"type": "text", "text": prompt_text})
 
         try:
+            url = GEMINI_VISION_URL.format(model=VISION_MODEL)
             resp = self.session.post(
-                self.vision_api_url,
-                headers={
-                    "x-api-key": self.vision_api_key,
-                    "Content-Type": "application/json",
-                    "anthropic-version": "2023-06-01",
-                },
+                url,
+                params={"key": self.gemini_api_key},
+                headers={"Content-Type": "application/json"},
                 json={
-                    "model": VISION_MODEL,
-                    "max_tokens": VISION_MAX_TOKENS,
-                    "system": VISION_SYSTEM_PROMPT,
-                    "messages": [
-                        {"role": "user", "content": anthropic_content},
-                    ],
+                    "system_instruction": {"parts": [{"text": VISION_SYSTEM_PROMPT}]},
+                    "contents": [{
+                        "parts": [
+                            {"inline_data": {"mime_type": "image/jpeg", "data": b64_image}},
+                            {"text": prompt_text},
+                        ],
+                    }],
+                    "generationConfig": {"maxOutputTokens": VISION_MAX_TOKENS},
                 },
-                timeout=30,
+                timeout=15,
             )
             resp.raise_for_status()
             data = resp.json()
-            content_blocks = data.get("content")
-            if not content_blocks:
-                logger.error("Vision API returned no content (file_id=%s): %s", file_id, data.get("error", data))
+            candidates = data.get("candidates", [])
+            if not candidates:
+                logger.error("Gemini vision returned no candidates (file_id=%s): %s", file_id, data)
                 return None
-            # Extract text from content blocks
-            text_parts = [b.get("text", "") for b in content_blocks if b.get("type") == "text"]
-            text = " ".join(text_parts).strip()
+            parts = candidates[0].get("content", {}).get("parts", [])
+            text = " ".join(p.get("text", "") for p in parts).strip()
             if not text:
-                logger.warning("Vision API returned empty text (file_id=%s)", file_id)
+                logger.warning("Gemini vision returned empty text (file_id=%s)", file_id)
                 return None
-            logger.info("Vision result (MiniMax): %s", text[:100])
+            logger.info("Vision result (Gemini): %s", text[:100])
             return text
 
         except requests.RequestException as exc:
-            logger.error("Vision API network error (file_id=%s): %s", file_id, exc)
+            logger.error("Gemini vision network error (file_id=%s): %s", file_id, exc)
             return None
         except (KeyError, ValueError) as exc:
-            logger.error("Vision API response parse error (file_id=%s): %s", file_id, exc)
+            logger.error("Gemini vision response parse error (file_id=%s): %s", file_id, exc)
             return None
         except Exception as exc:
-            logger.exception("Unexpected error in vision (file_id=%s): %s", file_id, exc)
+            logger.exception("Unexpected error in Gemini vision (file_id=%s): %s", file_id, exc)
             return None
 
     # -- Combined processing --
