@@ -16,14 +16,15 @@ SONIOX_MODEL = "stt-async-preview"
 SONIOX_POLL_INTERVAL = 1.0
 SONIOX_MAX_WAIT = 60
 
-VISION_MODEL = "gemini-2.5-flash"
+VISION_MODEL = "gemini-3.1-flash-lite-preview"
 VISION_MAX_TOKENS = 200
 GEMINI_VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
 VISION_SYSTEM_PROMPT = (
-    "אתה מזהה מוצרים בתמונות. "
-    "תחזיר רק את שם המוצר בעברית, בלי הסברים. "
-    "אם יש כמה מוצרים, תפריד בפסיקים. "
+    "אתה מזהה מוצרים לרשימת קניות. "
+    "זהה רק את המוצר העיקרי בתמונה — זה שמישהו מחזיק, מצלם מקרוב, או מציג בכוונה. "
+    "התעלם מרקע, רהיטים וחפצים אחרים. "
+    "תחזיר רק את שם המוצר בעברית, מילה אחת עד שלוש, בלי הסברים. "
     "אם לא ניתן לזהות מוצר, תחזיר: לא הצלחתי לזהות את המוצר"
 )
 
@@ -187,7 +188,7 @@ class MediaHandler:
                             {"text": prompt_text},
                         ],
                     }],
-                    "generationConfig": {"maxOutputTokens": VISION_MAX_TOKENS, "thinkingConfig": {"thinkingBudget": 0}},
+                    "generationConfig": {"maxOutputTokens": VISION_MAX_TOKENS},
                 },
                 timeout=15,
             )
