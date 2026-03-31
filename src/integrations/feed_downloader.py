@@ -259,12 +259,16 @@ class PriceDB:
 
     def lookup_barcode(self, barcode: str) -> str | None:
         """Look up a product by barcode (item_code). Returns item_name or None."""
-        with sqlite3.connect(self.db_path) as conn:
-            row = conn.execute(
-                "SELECT item_name FROM products WHERE item_code = ? LIMIT 1",
-                (barcode,),
-            ).fetchone()
-        return row[0] if row else None
+        try:
+            with sqlite3.connect(self.db_path) as conn:
+                row = conn.execute(
+                    "SELECT item_name FROM products WHERE item_code = ? LIMIT 1",
+                    (barcode,),
+                ).fetchone()
+            return row[0] if row else None
+        except sqlite3.Error as exc:
+            logger.error("Barcode lookup failed for %s: %s", barcode, exc)
+            return None
 
 
 def format_feed_results(results: list[dict], query: str, limit: int = 5) -> str:

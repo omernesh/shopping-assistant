@@ -28,7 +28,15 @@ class ShoppingModeManager:
         return True
 
     def activate(self, chat_id: str) -> None:
+        self._cleanup_expired()
         self._active[chat_id] = time.time()
+
+    def _cleanup_expired(self) -> None:
+        """Remove expired entries to prevent unbounded dict growth."""
+        now = time.time()
+        expired = [k for k, ts in self._active.items() if now - ts > self.TIMEOUT_SECONDS]
+        for k in expired:
+            del self._active[k]
 
     def deactivate(self, chat_id: str) -> None:
         self._active.pop(chat_id, None)

@@ -154,7 +154,7 @@ class MediaHandler:
 
     # -- Gemini Vision --
 
-    def identify_product_image(self, file_id: str, caption: str | None = None) -> str | None:
+    def identify_product_image(self, file_id: str) -> str | None:
         """Download photo from Telegram and identify product via Gemini vision."""
         if not self.gemini_api_key:
             logger.warning("GEMINI_API_KEY not configured, skipping image recognition")
@@ -226,7 +226,7 @@ class MediaHandler:
         self, photo_file_id: str, caption: str | None = None,
     ) -> str | None:
         """Process a photo and return product identification or action text."""
-        product = self.identify_product_image(photo_file_id, caption=caption)
+        product = self.identify_product_image(photo_file_id)
         if not product:
             return None
 

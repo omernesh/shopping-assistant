@@ -91,6 +91,11 @@ class TelegramUpdate:
     payload: dict[str, Any]
 
 
+def _chat_key(chat_id: int, thread_id: int | None) -> str:
+    """Build per-chat key for shopping mode state."""
+    return str(chat_id) + (f":{thread_id}" if thread_id else "")
+
+
 class TelegramPollingBot:
     def __init__(self, token: str, agent: ShoppingAgent, timeout: int = 30, media_handler: Any = None, shopping_mode: ShoppingModeManager | None = None):
         self.token = token
@@ -194,19 +199,18 @@ class TelegramPollingBot:
         text = message["text"].strip()
 
         # Build chat key for shopping mode (per-chat)
-        chat_key = str(chat_id) + (f":{thread_id}" if thread_id else "")
+        chat_key = _chat_key(chat_id, thread_id)
 
-        # Check for shopping mode activation/deactivation phrases
-        for phrase in ACTIVATION_PHRASES:
-            if phrase in text:
-                self.shopping_mode.activate(chat_key)
-                self.send_message(chat_id=chat_id, text=ACTIVATE_MSG, message_thread_id=thread_id)
-                return
-        for phrase in DEACTIVATION_PHRASES:
-            if phrase in text:
-                self.shopping_mode.deactivate(chat_key)
-                self.send_message(chat_id=chat_id, text=DEACTIVATE_MSG, message_thread_id=thread_id)
-                return
+        # Check for shopping mode activation/deactivation phrases (exact match only)
+        text_stripped = text.strip()
+        if text_stripped in ACTIVATION_PHRASES:
+            self.shopping_mode.activate(chat_key)
+            self.send_message(chat_id=chat_id, text=ACTIVATE_MSG, message_thread_id=thread_id)
+            return
+        if text_stripped in DEACTIVATION_PHRASES:
+            self.shopping_mode.deactivate(chat_key)
+            self.send_message(chat_id=chat_id, text=DEACTIVATE_MSG, message_thread_id=thread_id)
+            return
 
         context = self.adapter.normalize_message(update).to_message_context()
 
@@ -252,7 +256,7 @@ class TelegramPollingBot:
             return
 
         # Shopping mode: rewrite voice transcription as purchase
-        chat_key = str(chat_id) + (f":{thread_id}" if thread_id else "")
+        chat_key = _chat_key(chat_id, thread_id)
         if self.shopping_mode.is_active(chat_key):
             self.shopping_mode.touch(chat_key)
             transcribed = f"קניתי {transcribed}"
@@ -284,10 +288,35 @@ class TelegramPollingBot:
         if not result_text:
             self.send_message(
                 chat_id=chat_id,
-                text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d6\u05d4\u05d5\u05ea \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8 \u05d1\u05ea\u05de\u05d5\u05e0\u05d4",
+                text="לא הצלחתי לזהות את המוצר בתמונה",
                 message_thread_id=thread_id,
             )
             return
+
+        # Handle barcode detection
+        if result_text.startswith("BARCODE:"):
+            barcode = result_text[len("BARCODE:"):].strip()
+            if not barcode:
+                self.send_message(chat_id=chat_id, text="לא הצלחתי לקרוא את הברקוד — נסה לצלם שוב", message_thread_id=thread_id)
+                return
+            price_db = getattr(self.agent.router, "price_db", None)
+            if price_db:
+                resolved = price_db.lookup_barcode(barcode)
+                if resolved:
+                    result_text = resolved
+                    logger.info("Barcode %s resolved to: %s", barcode, resolved)
+                else:
+                    self.send_message(chat_id=chat_id, text=f"לא מצאתי את המוצר בברקוד {barcode}", message_thread_id=thread_id)
+                    return
+            else:
+                self.send_message(chat_id=chat_id, text=f"ברקוד: {barcode} (חיפוש ברקוד לא זמין)", message_thread_id=thread_id)
+                return
+
+        # Shopping mode: rewrite as purchase
+        chat_key = _chat_key(chat_id, thread_id)
+        if self.shopping_mode.is_active(chat_key):
+            self.shopping_mode.touch(chat_key)
+            result_text = f"קניתי {result_text}"
 
         # Build context with identified product text
         context = self.adapter.normalize_media_message(message, text_override=result_text).to_message_context()
@@ -333,7 +362,7 @@ class TelegramPollingBot:
             message_thread_id=thread_id,
         )
 
-    def _handle_slash_command(self, text: str, context: Any, chat_key: str = "") -> str | None:
+    def _handle_slash_command(self, text: str, context: Any, chat_key: str) -> str | None:
         if not text.startswith("/"):
             return None
 
