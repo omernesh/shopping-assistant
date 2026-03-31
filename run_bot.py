@@ -68,12 +68,12 @@ def main() -> None:
     media_handler = MediaHandler(
         telegram_token=settings.telegram_bot_token,
         soniox_api_key=settings.soniox_api_key,
-        openai_api_key=settings.openai_api_key,
+        hermes_api_url="http://localhost:8642",
     )
     media_caps = []
     if settings.soniox_api_key:
         media_caps.append("voice-to-text (Soniox)")
-    if settings.openai_api_key:
+    if True:  # Hermes API always available locally
         media_caps.append("image recognition (GPT Vision)")
     if media_caps:
         logging.info("Media handler enabled: %s", ", ".join(media_caps))

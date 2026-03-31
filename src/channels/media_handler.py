@@ -16,8 +16,7 @@ SONIOX_MODEL = "stt-async-preview"
 SONIOX_POLL_INTERVAL = 1.0
 SONIOX_MAX_WAIT = 60
 
-OPENAI_CHAT_URL = "https://api.openai.com/v1/chat/completions"
-VISION_MODEL = "gpt-4o"
+VISION_MODEL = "hermes-agent"
 
 VISION_SYSTEM_PROMPT = (
     "אתה מזהה מוצרים בתמונות. "
@@ -32,11 +31,11 @@ class MediaHandler:
         self,
         telegram_token: str,
         soniox_api_key: str | None = None,
-        openai_api_key: str | None = None,
+        hermes_api_url: str = "http://localhost:8642",
     ):
         self.telegram_token = telegram_token
         self.soniox_api_key = soniox_api_key
-        self.openai_api_key = openai_api_key
+        self.hermes_api_url = hermes_api_url.rstrip("/")
         self.tg_base = f"https://api.telegram.org/bot{telegram_token}"
         self.session = requests.Session()
 
@@ -135,8 +134,8 @@ class MediaHandler:
 
     def identify_product_image(self, file_id: str, caption: str | None = None) -> str | None:
         """Download photo from Telegram and identify product via GPT vision."""
-        if not self.openai_api_key:
-            logger.warning("OPENAI_API_KEY not configured, skipping image recognition")
+        if not self.hermes_api_url:
+            logger.warning("Hermes API URL not configured, skipping image recognition")
             return None
 
         try:
@@ -160,11 +159,8 @@ class MediaHandler:
 
         try:
             resp = self.session.post(
-                OPENAI_CHAT_URL,
-                headers={
-                    "Authorization": f"Bearer {self.openai_api_key}",
-                    "Content-Type": "application/json",
-                },
+                f"{self.hermes_api_url}/v1/chat/completions",
+                headers={"Content-Type": "application/json"},
                 json={
                     "model": VISION_MODEL,
                     "max_tokens": 200,
@@ -173,15 +169,15 @@ class MediaHandler:
                         {"role": "user", "content": user_content},
                     ],
                 },
-                timeout=30,
+                timeout=60,
             )
             resp.raise_for_status()
             text = resp.json()["choices"][0]["message"]["content"].strip()
-            logger.info("Vision result: %s", text[:100])
+            logger.info("Vision result (via Hermes): %s", text[:100])
             return text if text else None
 
         except Exception as exc:
-            logger.exception("OpenAI vision failed: %s", exc)
+            logger.exception("Hermes vision request failed: %s", exc)
             return None
 
     # -- Combined processing --
