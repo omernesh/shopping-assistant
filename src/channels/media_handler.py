@@ -16,7 +16,7 @@ SONIOX_MODEL = "stt-async-preview"
 SONIOX_POLL_INTERVAL = 1.0
 SONIOX_MAX_WAIT = 60
 
-VISION_MODEL = "gemini-2.0-flash"
+VISION_MODEL = "gemini-2.5-flash"
 VISION_MAX_TOKENS = 200
 GEMINI_VISION_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
 
@@ -187,7 +187,7 @@ class MediaHandler:
                             {"text": prompt_text},
                         ],
                     }],
-                    "generationConfig": {"maxOutputTokens": VISION_MAX_TOKENS},
+                    "generationConfig": {"maxOutputTokens": VISION_MAX_TOKENS, "thinkingConfig": {"thinkingBudget": 0}},
                 },
                 timeout=15,
             )
