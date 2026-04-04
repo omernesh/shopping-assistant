@@ -446,7 +446,7 @@ class ShoppingAssistantRouter:
             try:
                 dt = datetime.fromisoformat(completed_at)
                 date_display = dt.strftime("%d/%m/%Y")
-            except Exception:
+            except (ValueError, TypeError):
                 date_display = completed_at
             list_name = r.list_name
             count = r.item_count or 0

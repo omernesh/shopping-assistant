@@ -83,6 +83,7 @@ def _safe_float(s: str) -> float | None:
     try:
         return float(s) if s else None
     except ValueError:
+        logger.debug("Could not parse float: %r", s)
         return None
 
 
@@ -93,13 +94,19 @@ class PriceDB:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path)
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA busy_timeout=5000")
+        return conn
+
     def initialize(self) -> None:
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.executescript(PRICE_DB_SCHEMA)
 
     def search_product(self, query: str, limit: int = 20) -> list[dict]:
         """Search products by name. Prefers exact matches, falls back to LIKE."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             # Try prefix match first (item name starts with query)
             rows = conn.execute(
@@ -138,7 +145,7 @@ class PriceDB:
         if size <= max_bytes:
             return False
         logger.warning("Price DB size %d bytes exceeds limit %d, rotating...", size, max_bytes)
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.execute("""
                 DELETE FROM products WHERE fetched_at < (
                     SELECT MAX(fetched_at) FROM feed_metadata
@@ -213,7 +220,7 @@ class PriceDB:
                 _extract_text(item_el, field_map["update_date"]),
             ))
 
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.executemany(
                 """INSERT OR REPLACE INTO products (item_code, item_name, manufacturer, price, unit_price,
                    quantity, unit_of_measure, is_weighted, chain, store_id, update_date)
@@ -230,7 +237,7 @@ class PriceDB:
 
     def find_matching_products(self, query: str, limit: int = 8) -> list[dict]:
         """Find distinct products matching the query."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             # Prefer starts-with match
             rows = conn.execute(
@@ -260,7 +267,7 @@ class PriceDB:
     def lookup_barcode(self, barcode: str) -> str | None:
         """Look up a product by barcode (item_code). Returns item_name or None."""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with self._connect() as conn:
                 row = conn.execute(
                     "SELECT item_name FROM products WHERE item_code = ? LIMIT 1",
                     (barcode,),

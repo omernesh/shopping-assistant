@@ -81,22 +81,24 @@ def test(agent, label: str, message: str, user_id="user1", user_name="דני", c
         start = time.time()
         response = agent.handle_message(context)
         elapsed = time.time() - start
-        
+
         # Check for pending conflicts (duplicate detection)
         conflict = agent.pending_conflicts.pop(context.external_chat_id, None)
-        
+
         print(f"RESPONSE ({elapsed:.1f}s):")
         if response:
             print(response)
         else:
             print("[EMPTY - bot stayed silent]")
-        
+
         if conflict:
             print(f"\n[DUPLICATE DETECTED]")
             print(f"  Existing: {conflict.existing_item.normalized_name} (qty: {conflict.existing_item.quantity_value})")
             print(f"  New: {conflict.new_item_name} (qty: {conflict.new_quantity})")
+        return True
     except Exception as e:
         print(f"ERROR: {e}")
+        return False
     
     print(f"{'='*60}")
     # Small delay to avoid rate limiting MiniMax
@@ -105,107 +107,115 @@ def test(agent, label: str, message: str, user_id="user1", user_name="דני", c
 
 def main():
     agent, router, store = setup()
-    
+    failures = 0
+
+    def run(label, message, **kwargs):
+        nonlocal failures
+        if not test(agent, label, message, **kwargs):
+            failures += 1
+
     print("\n" + "#"*60)
     print("# SHOPPING ASSISTANT INTEGRATION TEST")
     print("#"*60)
-    
+
     # ===== SECTION 1: Basic Operations =====
     print("\n\n>>> SECTION 1: Basic Operations")
-    
-    test(agent, "Empty list query", "מה יש ברשימה?")
-    test(agent, "Add single item", "חלב")
-    test(agent, "Add item with quantity", "3 ביצים")
-    test(agent, "Add item with Hebrew quantity", "קילו עגבניות")
-    test(agent, "Show list", "תראה לי את הרשימה")
-    test(agent, "Show list - slash style", "?")
+
+    run("Empty list query", "מה יש ברשימה?")
+    run("Add single item", "חלב")
+    run("Add item with quantity", "3 ביצים")
+    run("Add item with Hebrew quantity", "קילו עגבניות")
+    run("Show list", "תראה לי את הרשימה")
+    run("Show list - slash style", "?")
     
     # ===== SECTION 2: Multi-item add =====
     print("\n\n>>> SECTION 2: Multi-item add (single message with multiple items)")
     
-    test(agent, "Multiple items newline", "לחם\nחמאה\nגבינה צהובה")
-    test(agent, "Multiple items comma", "תפוחים, בננות, תפוזים")
-    test(agent, "Long shopping list", """12 ביצים
+    run("Multiple items newline", "לחם\nחמאה\nגבינה צהובה")
+    run("Multiple items comma", "תפוחים, בננות, תפוזים")
+    run("Long shopping list", """12 ביצים
 3 חלב
 גבינה צהובה 400 גרם
 נקניק סלמי
 מילקי
 קוטג׳""")
     
-    test(agent, "Show list after bulk add", "/list")
+    run("Show list after bulk add", "/list")
     
     # ===== SECTION 3: Duplicate detection =====
     print("\n\n>>> SECTION 3: Duplicate detection")
     
-    test(agent, "Add duplicate - exact", "חלב")
-    test(agent, "Add duplicate - with quantity", "5 ביצים")
-    test(agent, "Add duplicate - similar name", "גבינה")
+    run("Add duplicate - exact", "חלב")
+    run("Add duplicate - with quantity", "5 ביצים")
+    run("Add duplicate - similar name", "גבינה")
     
     # ===== SECTION 4: Mark purchased / delete =====
     print("\n\n>>> SECTION 4: Mark purchased and delete")
     
-    test(agent, "Mark purchased", "קניתי חלב")
-    test(agent, "Mark purchased - natural", "קניתי את הביצים")
-    test(agent, "Delete item", "מחק מילקי")
-    test(agent, "Delete non-existent", "מחק שוקולד")
-    test(agent, "Mark purchased non-existent", "קניתי אבטיח")
+    run("Mark purchased", "קניתי חלב")
+    run("Mark purchased - natural", "קניתי את הביצים")
+    run("Delete item", "מחק מילקי")
+    run("Delete non-existent", "מחק שוקולד")
+    run("Mark purchased non-existent", "קניתי אבטיח")
     
     # ===== SECTION 5: Price lookup =====
     print("\n\n>>> SECTION 5: Price lookup")
     
-    test(agent, "Price check - simple", "כמה עולה חלב?")
-    test(agent, "Price check - specific", "מחיר ביצים ביבנה")
-    test(agent, "Price check - non-food", "כמה עולה מברג?")
+    run("Price check - simple", "כמה עולה חלב?")
+    run("Price check - specific", "מחיר ביצים ביבנה")
+    run("Price check - non-food", "כמה עולה מברג?")
     
     # ===== SECTION 6: List cost estimate =====
     print("\n\n>>> SECTION 6: List cost and comparison")
     
-    test(agent, "List cost estimate", "כמה עולה הרשימה שלי?")
-    test(agent, "Chain comparison", "השווה את הרשימה שלי בין רשתות")
-    test(agent, "Single item comparison", "כמה עולה לחם, השווה בין רשתות")
+    run("List cost estimate", "כמה עולה הרשימה שלי?")
+    run("Chain comparison", "השווה את הרשימה שלי בין רשתות")
+    run("Single item comparison", "כמה עולה לחם, השווה בין רשתות")
     
     # ===== SECTION 7: Clear list =====
     print("\n\n>>> SECTION 7: Clear and reset")
     
-    test(agent, "Clear list", "נקה את הרשימה")
-    test(agent, "Show after clear", "מה יש ברשימה?")
-    test(agent, "Clear empty list", "נקה הכל")
+    run("Clear list", "נקה את הרשימה")
+    run("Show after clear", "מה יש ברשימה?")
+    run("Clear empty list", "נקה הכל")
     
     # ===== SECTION 8: Multi-user simulation =====
     print("\n\n>>> SECTION 8: Multi-user simulation")
     
-    test(agent, "User Noa adds item", "2 חלב", user_id="user2", user_name="נועה")
-    test(agent, "User Noa adds more", "לחם שחור", user_id="user2", user_name="נועה")
-    test(agent, "User Yossi adds item", "6 בירה", user_id="user3", user_name="יוסי")
-    test(agent, "User Yossi adds item", "נקניקיות", user_id="user3", user_name="יוסי")
-    test(agent, "User1 asks what Noa wanted", "מה נועה הוסיפה?", user_id="user1", user_name="דני")
-    test(agent, "User1 asks what Yossi wanted", "מה יוסי רצה?", user_id="user1", user_name="דני")
-    test(agent, "Show full list", "הצג את הרשימה")
+    run("User Noa adds item", "2 חלב", user_id="user2", user_name="נועה")
+    run("User Noa adds more", "לחם שחור", user_id="user2", user_name="נועה")
+    run("User Yossi adds item", "6 בירה", user_id="user3", user_name="יוסי")
+    run("User Yossi adds item", "נקניקיות", user_id="user3", user_name="יוסי")
+    run("User1 asks what Noa wanted", "מה נועה הוסיפה?", user_id="user1", user_name="דני")
+    run("User1 asks what Yossi wanted", "מה יוסי רצה?", user_id="user1", user_name="דני")
+    run("Show full list", "הצג את הרשימה")
     
     # ===== SECTION 9: Edge cases =====
     print("\n\n>>> SECTION 9: Edge cases")
     
-    test(agent, "Empty message", "")
-    test(agent, "Just spaces", "   ")
-    test(agent, "Random chat - should ignore", "מה נשמע? איך היום שלך?")
-    test(agent, "Question mark only", "?")
-    test(agent, "Very long item name", "שוקולד מריר 85% קקאו בלגי אורגני ללא סוכר עם שקדים קלויים 200 גרם")
-    test(agent, "Hebrew + English mix", "Coca Cola Zero 1.5L")
-    test(agent, "Numbers only", "42")
-    test(agent, "URL should ignore", "https://www.shufersal.co.il/online/he/search?q=milk")
-    test(agent, "Help request", "מה אתה יכול לעשות?")
-    test(agent, "City change", "עיר תל אביב")
+    run("Empty message", "")
+    run("Just spaces", "   ")
+    run("Random chat - should ignore", "מה נשמע? איך היום שלך?")
+    run("Question mark only", "?")
+    run("Very long item name", "שוקולד מריר 85% קקאו בלגי אורגני ללא סוכר עם שקדים קלויים 200 גרם")
+    run("Hebrew + English mix", "Coca Cola Zero 1.5L")
+    run("Numbers only", "42")
+    run("URL should ignore", "https://www.shufersal.co.il/online/he/search?q=milk")
+    run("Help request", "מה אתה יכול לעשות?")
+    run("City change", "עיר תל אביב")
     
     # ===== SECTION 10: Separate chat (different list) =====
     print("\n\n>>> SECTION 10: Separate chat scope")
     
-    test(agent, "Add to chat2", "סוכר", chat_id="testchat2", user_name="דני", user_id="user4")
-    test(agent, "Show chat2 list", "מה יש ברשימה?", chat_id="testchat2", user_name="דני", user_id="user4")
-    test(agent, "Show chat1 list (should be different)", "מה יש ברשימה?", chat_id="testchat1")
+    run("Add to chat2", "סוכר", chat_id="testchat2", user_name="דני", user_id="user4")
+    run("Show chat2 list", "מה יש ברשימה?", chat_id="testchat2", user_name="דני", user_id="user4")
+    run("Show chat1 list (should be different)", "מה יש ברשימה?", chat_id="testchat1")
     
     print("\n\n" + "#"*60)
-    print("# TEST COMPLETE")
+    print(f"# TEST COMPLETE — {failures} failure(s)")
     print("#"*60)
+
+    sys.exit(1 if failures else 0)
 
 
 if __name__ == "__main__":

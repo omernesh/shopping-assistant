@@ -2,9 +2,13 @@ from __future__ import annotations
 
 import json
 import logging
+import sqlite3
 from collections import OrderedDict
 from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
 from typing import Any
+
+import requests
+
 from src.app.router import MessageContext, ShoppingAssistantRouter, DuplicateConflict
 
 logger = logging.getLogger(__name__)
@@ -252,6 +256,6 @@ class ShoppingAgent:
 
             else:
                 return f"Unknown tool: {name}"
-        except Exception as exc:
+        except (sqlite3.Error, requests.RequestException, ValueError, KeyError) as exc:
             logger.exception("Tool %s failed: %s", name, exc)
             return f"Error: {exc}"

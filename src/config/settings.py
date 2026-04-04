@@ -53,6 +53,14 @@ def _load_dotenv(env_path: Path) -> None:
         os.environ.setdefault(key, value)
 
 
+def _env_int(key: str, default: int) -> int:
+    val = os.getenv(key, str(default))
+    try:
+        return int(val)
+    except ValueError:
+        raise ValueError(f"Environment variable {key} must be an integer, got: {val!r}")
+
+
 def _env_bool(name: str, default: bool) -> bool:
     value = os.getenv(name)
     if value is None:
@@ -68,11 +76,11 @@ def load_settings() -> Settings:
     return Settings(
         telegram_bot_token=os.getenv("SHOPPING_BOT_TOKEN"),
         default_city=os.getenv("SHOPPING_ASSISTANT_DEFAULT_CITY", DEFAULT_CITY),
-        default_city_id=int(os.getenv("SHOPPING_ASSISTANT_DEFAULT_CITY_ID", str(DEFAULT_CITY_ID))),
-        default_street_id=int(os.getenv("SHOPPING_ASSISTANT_DEFAULT_STREET_ID", str(DEFAULT_STREET_ID))),
+        default_city_id=_env_int("SHOPPING_ASSISTANT_DEFAULT_CITY_ID", DEFAULT_CITY_ID),
+        default_street_id=_env_int("SHOPPING_ASSISTANT_DEFAULT_STREET_ID", DEFAULT_STREET_ID),
         chp_base_url=os.getenv("SHOPPING_ASSISTANT_CHP_BASE_URL", DEFAULT_CHP_BASE_URL),
         db_path=db_path,
-        cache_ttl_seconds=int(os.getenv("SHOPPING_ASSISTANT_CACHE_TTL_SECONDS", str(DEFAULT_CACHE_TTL_SECONDS))),
+        cache_ttl_seconds=_env_int("SHOPPING_ASSISTANT_CACHE_TTL_SECONDS", DEFAULT_CACHE_TTL_SECONDS),
         llm_api_key=os.getenv("LLM_API_KEY") or os.getenv("MINIMAX_API_KEY"),
         llm_model=os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL),
         llm_base_url=os.getenv("LLM_BASE_URL", DEFAULT_LLM_BASE_URL),

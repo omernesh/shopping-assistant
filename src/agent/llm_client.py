@@ -244,6 +244,9 @@ class LLMConfig:
     base_url: str = "https://api.minimax.io/anthropic"
     timeout: int = 30
 
+    def __repr__(self):
+        return f"LLMConfig(model={self.model!r}, base_url={self.base_url!r}, api_key='***')"
+
 
 @dataclass
 class ToolCall:

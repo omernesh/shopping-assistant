@@ -1141,5 +1141,9 @@ class TelegramPollingBot:
             }
             if message_thread_id is not None:
                 payload["message_thread_id"] = message_thread_id
-            response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
-            response.raise_for_status()
+            try:
+                response = self.session.post(f"{self.base_url}/sendMessage", json=payload, timeout=15)
+                response.raise_for_status()
+            except requests.RequestException as exc:
+                logger.error("Failed to send message to chat %s: %s", chat_id, exc)
+                return None
