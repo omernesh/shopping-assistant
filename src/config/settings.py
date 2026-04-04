@@ -31,6 +31,9 @@ class Settings:
     llm_model: str = DEFAULT_LLM_MODEL
     llm_base_url: str = DEFAULT_LLM_BASE_URL
     agent_enabled: bool = True
+    soniox_api_key: str | None = None
+    gemini_api_key: str | None = None
+    super_admin_id: str = ""
 
 
 def _load_dotenv(env_path: Path) -> None:
@@ -74,4 +77,7 @@ def load_settings() -> Settings:
         llm_model=os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL),
         llm_base_url=os.getenv("LLM_BASE_URL", DEFAULT_LLM_BASE_URL),
         agent_enabled=_env_bool("SHOPPING_ASSISTANT_AGENT_ENABLED", True),
+        soniox_api_key=os.getenv("SONIOX_API_KEY"),
+        gemini_api_key=os.getenv("GEMINI_API_KEY"),
+        super_admin_id=os.getenv("SUPER_ADMIN_ID", ""),
     )

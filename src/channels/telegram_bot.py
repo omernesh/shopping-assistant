@@ -37,19 +37,28 @@ class TelegramBotAdapter:
     Phase 0/1 goal is to keep the Telegram boundary thin and move all behavior into the router.
     """
 
-    def normalize_message(self, payload: dict) -> TelegramMessageContext:
-        message = payload.get("message", payload)
+    def _build_context(self, message: dict, text: str) -> TelegramMessageContext:
+        """Shared context builder for text and media messages."""
         chat = message["chat"]
         from_user = message.get("from", {})
-        # Build display name from first_name + last_name
         first = from_user.get("first_name", "")
         last = from_user.get("last_name", "")
         user_name = f"{first} {last}".strip() or from_user.get("username") or None
+        user_id = from_user.get("id", 0)
         return TelegramMessageContext(
             chat_id=chat["id"],
             thread_id=message.get("message_thread_id"),
-            user_id=message["from"]["id"],
-            text=message.get("text", "").strip(),
+            user_id=user_id,
+            text=text,
             title=chat.get("title"),
             user_name=user_name,
         )
+
+    def normalize_message(self, payload: dict) -> TelegramMessageContext:
+        message = payload.get("message", payload)
+        text = message.get("text", "").strip()
+        return self._build_context(message, text)
+
+    def normalize_media_message(self, message: dict, text_override: str) -> TelegramMessageContext:
+        """Normalize a media message (voice/photo), substituting detected text."""
+        return self._build_context(message, text_override)
