@@ -10,7 +10,7 @@ from src.app.router import ShoppingAssistantRouter
 from src.integrations.chp_client import CHPClient
 from src.channels.telegram_polling import TelegramPollingBot
 from src.channels.media_handler import MediaHandler
-from src.config.settings import load_settings
+from src.config.settings import load_settings, MAX_DB_SIZE_BYTES
 from src.storage.sqlite_store import SQLiteStore
 from src.integrations.feed_downloader import PriceDB
 from src.integrations.price_service import PriceService
@@ -28,7 +28,7 @@ def main() -> None:
 
     store = SQLiteStore(settings.db_path)
     store.initialize()
-    store.rotate_if_needed(max_bytes=250 * 1024 * 1024)
+    store.rotate_if_needed(max_bytes=MAX_DB_SIZE_BYTES)
     chp_client = CHPClient(timeout=15)
     price_db_path = settings.db_path.parent / "prices.sqlite3"
     price_db = PriceDB(price_db_path)
@@ -43,7 +43,7 @@ def main() -> None:
         except sqlite3.Error as exc:
             logging.warning("ANALYZE failed for %s: %s (non-fatal)", _db_path, exc)
     router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db, price_service=price_service)
-    price_db.rotate_if_needed(max_bytes=250 * 1024 * 1024)
+    price_db.rotate_if_needed(max_bytes=MAX_DB_SIZE_BYTES)
     price_db_size = price_db.get_db_size_bytes()
     store_db_size = store.get_db_size_bytes()
     size_mb = price_db_size / (1024 * 1024)

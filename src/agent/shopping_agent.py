@@ -4,10 +4,11 @@ import json
 import logging
 import sqlite3
 from collections import OrderedDict
-from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
 from typing import Any
 
 import requests
+
+from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
 
 from src.app.router import MessageContext, ShoppingAssistantRouter, DuplicateConflict
 
@@ -158,8 +159,9 @@ class ShoppingAgent:
                     self._evict_oldest(self.pending_conflicts)
                     self.pending_conflicts[context.external_chat_id] = result
                     existing = result.existing_item
+                    from src.app.router import _fmt_qty
                     eq = existing.quantity_value
-                    eq_display = int(eq) if eq and eq == int(eq) else eq
+                    eq_display = _fmt_qty(eq) if eq else eq
                     return (
                         f"\u05e0\u05de\u05e6\u05d0 \u05e4\u05e8\u05d9\u05d8 \u05d3\u05d5\u05de\u05d4 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4: {existing.normalized_name}"
                         + (f" ({eq_display})" if eq_display else "")

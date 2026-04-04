@@ -9,6 +9,13 @@ from typing import Any
 
 import requests
 
+from src.app.router import _fmt_qty
+
+
+def _backoff_seconds(failures: int) -> float:
+    """Exponential backoff: 3s, 6s, 12s, 24s, 48s, 96s, capped at 120s."""
+    return min(3 * (2 ** min(failures - 1, 5)), 120)
+
 
 class TTLDict:
     """Simple dict with automatic expiry of old entries."""
@@ -194,12 +201,12 @@ class TelegramPollingBot:
                     self.handle_update(update.payload)
             except requests.RequestException as exc:
                 consecutive_failures += 1
-                backoff = min(3 * (2 ** min(consecutive_failures - 1, 5)), 120)
+                backoff = _backoff_seconds(consecutive_failures)
                 logger.exception("Telegram polling failed (attempt %d, backoff %ds): %s", consecutive_failures, backoff, exc)
                 time.sleep(backoff)
             except Exception as exc:  # noqa: BLE001
                 consecutive_failures += 1
-                backoff = min(3 * (2 ** min(consecutive_failures - 1, 5)), 120)
+                backoff = _backoff_seconds(consecutive_failures)
                 logger.exception("Unexpected polling failure (attempt %d, backoff %ds): %s", consecutive_failures, backoff, exc)
                 time.sleep(backoff)
 
@@ -328,7 +335,7 @@ class TelegramPollingBot:
 
         logger.info("Processing voice message from user %s", message.get("from", {}).get("id"))
 
-        transcribed = self.media_handler.process_voice_message(file_id)
+        transcribed = self.media_handler.transcribe_voice(file_id)
         if not transcribed:
             self.send_message(
                 chat_id=chat_id,
@@ -583,7 +590,7 @@ class TelegramPollingBot:
             for item in remaining:
                 qty_str = ""
                 if item.quantity_value:
-                    q = int(item.quantity_value) if item.quantity_value == int(item.quantity_value) else item.quantity_value
+                    q = _fmt_qty(item.quantity_value)
                     qty_str = f" x{q}"
                 lines.append(f"  \u25aa {item.normalized_name}{qty_str}")
 
@@ -700,7 +707,7 @@ class TelegramPollingBot:
             list_name = row["name"]
             list_id = row["id"]
             # Count active items
-            item_count = len(store.list_active_items(list_id))
+            item_count = store.count_pending_items(list_id)
             marker = "\u25c9 " if list_id == active_list.id else ""
             label = f"{marker}{list_name} ({item_count})"
             buttons.append([{"text": label, "callback_data": f"switch_list:{list_id}"}])
@@ -767,7 +774,7 @@ class TelegramPollingBot:
             qty = row["quantity_value"]
             qty_str = ""
             if qty:
-                q = int(qty) if qty == int(qty) else qty
+                q = _fmt_qty(qty)
                 unit = row["quantity_unit"] or ""
                 qty_str = f" x{q}{unit}"
             list_name = row["list_name"]
@@ -997,7 +1004,7 @@ class TelegramPollingBot:
             for item in items:
                 qty_str = ""
                 if item.quantity_value:
-                    q = int(item.quantity_value) if item.quantity_value == int(item.quantity_value) else item.quantity_value
+                    q = _fmt_qty(item.quantity_value)
                     qty_str = f" x{q}"
                 lines.append(f"  \u25aa {item.normalized_name}{qty_str}")
             result_text = "\n".join(lines)
@@ -1042,9 +1049,9 @@ class TelegramPollingBot:
 
         # Get current active list items and move matching ones
         current_list = store.ensure_active_list(chat_id=chat.id)
+        current_items = store.list_active_items(current_list.id)
         moved = 0
         for item_name in item_names:
-            current_items = store.list_active_items(current_list.id)
             for item in current_items:
                 if item.normalized_name.lower() == item_name.lower():
                     # Add to target list

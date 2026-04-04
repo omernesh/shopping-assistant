@@ -631,6 +631,15 @@ class SQLiteStore:
         """List pending items.  Kept as list_active_items for backward compat."""
         return self.list_pending_items(list_id)
 
+    def count_pending_items(self, list_id: int) -> int:
+        """Return count of pending items in a list (cheaper than fetching all rows)."""
+        with self.connect() as conn:
+            row = conn.execute(
+                "SELECT COUNT(*) FROM list_items WHERE list_id = ? AND status = 'pending'",
+                (list_id,),
+            ).fetchone()
+        return row[0] if row else 0
+
     def list_pending_items(self, list_id: int) -> list[StoredItem]:
         """List all pending (not bought/deleted) items in a list."""
         with self.connect() as conn:

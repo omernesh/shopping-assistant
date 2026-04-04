@@ -61,11 +61,7 @@ FIELD_MAPS = {
         "price": "ItemPrice", "unit_price": "UnitOfMeasurePrice", "quantity": "Quantity",
         "unit_of_measure": "UnitOfMeasure", "update_date": "PriceUpdateDate", "is_weighted": "bIsWeighted",
     },
-    "carrefour": {
-        "item_code": "ItemCode", "item_name": "ItemName", "manufacturer": "ManufacturerName",
-        "price": "ItemPrice", "unit_price": "UnitOfMeasurePrice", "quantity": "Quantity",
-        "unit_of_measure": "UnitOfMeasure", "update_date": "PriceUpdateDate", "is_weighted": "bIsWeighted",
-    },
+    "carrefour": None,  # same as shufersal; resolved at lookup time
     "rami-levy": {
         "item_code": "ItemCode", "item_name": "ItemName", "manufacturer": "ManufactureName",
         "price": "ItemPrice", "unit_price": "UnitOfMeasurePrice", "quantity": "Quantity",
@@ -164,7 +160,7 @@ class PriceDB:
 
     def ingest_xml(self, xml_bytes: bytes, chain: str, store_id: str = "") -> int:
         """Parse XML feed bytes and insert products into the DB."""
-        field_map = FIELD_MAPS.get(chain, FIELD_MAPS["shufersal"])
+        field_map = FIELD_MAPS.get(chain) or FIELD_MAPS["shufersal"]
 
         text = None
         for encoding in ("utf-8-sig", "utf-8", "windows-1255", "iso-8859-8"):
@@ -320,8 +316,3 @@ def format_feed_results(results: list[dict], query: str, limit: int = 5) -> str:
 
 
 
-CARREFOUR_CONFIG = {
-    "name": "קרפור",
-    "chain_id": "carrefour",
-    "site_url": "https://prices.carrefour.co.il",
-}

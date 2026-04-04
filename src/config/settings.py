@@ -14,6 +14,7 @@ DEFAULT_STREET_ID = 9000
 DEFAULT_CHP_BASE_URL = "https://chp.co.il"
 DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
 EXTRA_ENV_PATH = Path(os.getenv("SHOPPING_ASSISTANT_EXTRA_ENV", str(Path.home() / ".env")))
+MAX_DB_SIZE_BYTES = 250 * 1024 * 1024  # 250 MB
 DEFAULT_LLM_MODEL = "MiniMax-M2.7"
 DEFAULT_LLM_BASE_URL = "https://api.minimax.io/anthropic"
 

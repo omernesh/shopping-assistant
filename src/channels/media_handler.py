@@ -44,7 +44,6 @@ RECEIPT_PARSE_PROMPT = (
     '"store_name": "שופרסל דיל חולון", "chain_name": "שופרסל"}]'
 )
 
-RECEIPT_VISION_MODEL = "gemini-2.5-flash-lite"
 # Issue #12: Increase max tokens from 2000 to 4000 for long receipts
 RECEIPT_MAX_TOKENS = 4000
 
@@ -181,6 +180,66 @@ class MediaHandler:
 
     # -- Gemini Vision --
 
+    def _call_gemini(
+        self,
+        prompt: str,
+        *,
+        image_data: str | None = None,
+        image_mime: str = "image/jpeg",
+        system_prompt: str | None = None,
+        max_tokens: int = VISION_MAX_TOKENS,
+        timeout: int = 15,
+        context_label: str = "gemini",
+    ) -> str | None:
+        """Send a request to the Gemini API and return the text response.
+
+        Returns None on any failure (network, parse, empty response).
+        """
+        url = GEMINI_VISION_URL.format(model=VISION_MODEL)
+
+        parts: list[dict[str, Any]] = []
+        if image_data:
+            parts.append({"inline_data": {"mime_type": image_mime, "data": image_data}})
+        parts.append({"text": prompt})
+
+        body: dict[str, Any] = {
+            "contents": [{"parts": parts}],
+            "generationConfig": {"maxOutputTokens": max_tokens},
+        }
+        if system_prompt:
+            body["system_instruction"] = {"parts": [{"text": system_prompt}]}
+
+        try:
+            resp = self.session.post(
+                url,
+                params={"key": self.gemini_api_key},
+                headers={"Content-Type": "application/json"},
+                json=body,
+                timeout=timeout,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            candidates = data.get("candidates", [])
+            if not candidates:
+                logger.error("%s returned no candidates: %s", context_label, data)
+                return None
+            resp_parts = candidates[0].get("content", {}).get("parts", [])
+            text = " ".join(p.get("text", "") for p in resp_parts).strip()
+            if not text:
+                logger.warning("%s returned empty text", context_label)
+                return None
+            return text
+
+        except requests.RequestException as exc:
+            logger.error("%s network error: %s", context_label, exc)
+            return None
+        except (KeyError, ValueError) as exc:
+            logger.error("%s response parse error: %s", context_label, exc)
+            return None
+        except Exception as exc:
+            logger.exception("Unexpected error in %s: %s", context_label, exc)
+            return None
+
     def identify_product_image(self, file_id: str) -> str | None:
         """Download photo from Telegram and identify product via Gemini vision."""
         if not self.gemini_api_key:
@@ -198,50 +257,17 @@ class MediaHandler:
             return None
 
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
-
-        prompt_text = "מה המוצר בתמונה?"
-
-        try:
-            url = GEMINI_VISION_URL.format(model=VISION_MODEL)
-            resp = self.session.post(
-                url,
-                params={"key": self.gemini_api_key},
-                headers={"Content-Type": "application/json"},
-                json={
-                    "system_instruction": {"parts": [{"text": VISION_SYSTEM_PROMPT}]},
-                    "contents": [{
-                        "parts": [
-                            {"inline_data": {"mime_type": "image/jpeg", "data": b64_image}},
-                            {"text": prompt_text},
-                        ],
-                    }],
-                    "generationConfig": {"maxOutputTokens": VISION_MAX_TOKENS},
-                },
-                timeout=15,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            candidates = data.get("candidates", [])
-            if not candidates:
-                logger.error("Gemini vision returned no candidates (file_id=%s): %s", file_id, data)
-                return None
-            parts = candidates[0].get("content", {}).get("parts", [])
-            text = " ".join(p.get("text", "") for p in parts).strip()
-            if not text:
-                logger.warning("Gemini vision returned empty text (file_id=%s)", file_id)
-                return None
+        text = self._call_gemini(
+            "מה המוצר בתמונה?",
+            image_data=b64_image,
+            system_prompt=VISION_SYSTEM_PROMPT,
+            max_tokens=VISION_MAX_TOKENS,
+            timeout=15,
+            context_label=f"Gemini vision (file_id={file_id})",
+        )
+        if text:
             logger.info("Vision result (Gemini): %s", text[:100])
-            return text
-
-        except requests.RequestException as exc:
-            logger.error("Gemini vision network error (file_id=%s): %s", file_id, exc)
-            return None
-        except (KeyError, ValueError) as exc:
-            logger.error("Gemini vision response parse error (file_id=%s): %s", file_id, exc)
-            return None
-        except Exception as exc:
-            logger.exception("Unexpected error in Gemini vision (file_id=%s): %s", file_id, exc)
-            return None
+        return text
 
     # -- Receipt parsing --
 
@@ -260,38 +286,19 @@ class MediaHandler:
             return []
 
         b64_image = base64.b64encode(image_bytes).decode("utf-8")
+        raw_text = self._call_gemini(
+            RECEIPT_PARSE_PROMPT,
+            image_data=b64_image,
+            max_tokens=RECEIPT_MAX_TOKENS,
+            timeout=30,
+            context_label="Gemini receipt parse",
+        )
+        if not raw_text:
+            return []
+
+        logger.info("Receipt parse raw: %s", raw_text[:200])
 
         try:
-            url = GEMINI_VISION_URL.format(model=RECEIPT_VISION_MODEL)
-            resp = self.session.post(
-                url,
-                params={"key": self.gemini_api_key},
-                headers={"Content-Type": "application/json"},
-                json={
-                    "contents": [{
-                        "parts": [
-                            {"inline_data": {"mime_type": "image/jpeg", "data": b64_image}},
-                            {"text": RECEIPT_PARSE_PROMPT},
-                        ],
-                    }],
-                    "generationConfig": {"maxOutputTokens": RECEIPT_MAX_TOKENS},
-                },
-                timeout=30,
-            )
-            resp.raise_for_status()
-            data = resp.json()
-            candidates = data.get("candidates", [])
-            if not candidates:
-                logger.error("Gemini receipt parse returned no candidates")
-                return []
-            parts = candidates[0].get("content", {}).get("parts", [])
-            raw_text = " ".join(p.get("text", "") for p in parts).strip()
-            if not raw_text:
-                logger.warning("Gemini receipt parse returned empty text")
-                return []
-
-            logger.info("Receipt parse raw: %s", raw_text[:200])
-
             # Extract JSON array from response (may have markdown fences)
             json_text = raw_text
             if "```" in json_text:
@@ -341,12 +348,6 @@ class MediaHandler:
         except json.JSONDecodeError as exc:
             logger.error("Receipt parse JSON error: %s", exc)
             return []
-        except requests.RequestException as exc:
-            logger.error("Gemini receipt parse network error: %s", exc)
-            return []
-        except (KeyError, ValueError) as exc:
-            logger.error("Gemini receipt parse response error: %s", exc)
-            return []
         except Exception as exc:
             logger.exception("Unexpected error in receipt parsing: %s", exc)
             return []
@@ -358,26 +359,10 @@ class MediaHandler:
         if not self.gemini_api_key:
             return
         try:
-            url = GEMINI_VISION_URL.format(model=VISION_MODEL)
-            requests.post(
-                url,
-                params={"key": self.gemini_api_key},
-                headers={"Content-Type": "application/json"},
-                json={
-                    "contents": [{"parts": [{"text": "hi"}]}],
-                    "generationConfig": {"maxOutputTokens": 1},
-                },
-                timeout=120,
-            )
+            self._call_gemini("hi", max_tokens=1, timeout=120, context_label="Gemini warmup")
             logger.info("Gemini vision model warmed up")
         except Exception as exc:
             logger.warning("Gemini warmup failed (non-critical): %s", exc)
-
-    # -- Combined processing --
-
-    def process_voice_message(self, voice_file_id: str) -> str | None:
-        """Process a voice message and return transcribed text."""
-        return self.transcribe_voice(voice_file_id)
 
     def process_photo_message(
         self, photo_file_id: str, caption: str | None = None,
