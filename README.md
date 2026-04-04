@@ -130,7 +130,7 @@ Or just chat naturally in Hebrew:
 קניתי חלב              → marks milk as purchased
 כמה עולה חלב           → price lookup for milk
 מחק לחם                → deletes bread
-מה רציתה עינב?          → shows items added by Einav
+מה עינב רצתה?          → shows items added by Einav
 ```
 
 ## Price Data Pipeline
