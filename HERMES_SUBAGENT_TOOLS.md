@@ -1,8 +1,6 @@
 # Shopping Assistant Hermes Tool Contract
 
-Project path: /home/omer/.claude/projects/shopping assistant
-
-This file defines the tool surface the Hermes shopping subagent should use.
+This file defines the tool surface the shopping assistant agent should use.
 
 ## Tool 1: show_list
 Purpose: Return the active shared list for the current group/topic.

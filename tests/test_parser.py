@@ -20,10 +20,10 @@ def test_parse_ignores_slash_commands() -> None:
 
 
 def test_parse_ignores_meta_chatter() -> None:
-    parsed = parse_message("sammie, did you see the reply of the shopping assistant bot?")
+    parsed = parse_message("hey bot, did you see the reply of the shopping assistant bot?")
     assert parsed.intent == "ignore"
 
 
 def test_parse_ignores_long_multiline_prompt() -> None:
-    parsed = parse_message("You are joining a Telegram group/topic as Sammie\n- observe\n- help debug")
+    parsed = parse_message("You are joining a Telegram group/topic as an assistant\n- observe\n- help debug")
     assert parsed.intent == "ignore"

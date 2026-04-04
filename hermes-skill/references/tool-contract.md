@@ -1,7 +1,6 @@
 # Tool Contract Reference
 
-Primary tool contract file:
-/home/omer/.claude/projects/shopping assistant/HERMES_SUBAGENT_TOOLS.md
+Primary tool contract file: `HERMES_SUBAGENT_TOOLS.md` (project root)
 
 Allowed shopping actions:
 - show_list

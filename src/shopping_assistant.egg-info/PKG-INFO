@@ -1,0 +1,7 @@
+Metadata-Version: 2.4
+Name: shopping-assistant
+Version: 0.1.0
+Summary: Hebrew-first shopping assistant
+Requires-Python: >=3.11
+Requires-Dist: requests>=2.32.0
+Requires-Dist: pytest>=8.0.0

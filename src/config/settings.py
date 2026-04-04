@@ -13,7 +13,7 @@ DEFAULT_CITY_ID = 2660
 DEFAULT_STREET_ID = 9000
 DEFAULT_CHP_BASE_URL = "https://chp.co.il"
 DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
-HERMES_ENV_PATH = Path.home() / ".hermes" / ".env"
+EXTRA_ENV_PATH = Path(os.getenv("SHOPPING_ASSISTANT_EXTRA_ENV", str(Path.home() / ".env")))
 DEFAULT_LLM_MODEL = "MiniMax-M2.7"
 DEFAULT_LLM_BASE_URL = "https://api.minimax.io/anthropic"
 
@@ -61,7 +61,7 @@ def _env_bool(name: str, default: bool) -> bool:
 
 
 def load_settings() -> Settings:
-    _load_dotenv(HERMES_ENV_PATH)
+    _load_dotenv(EXTRA_ENV_PATH)
     _load_dotenv(DEFAULT_ENV_PATH)
     db_path = Path(os.getenv("SHOPPING_ASSISTANT_DB_PATH", str(DEFAULT_DB_PATH)))
 

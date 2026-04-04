@@ -640,7 +640,7 @@ class TelegramPollingBot:
         if not text.startswith("/"):
             return None
 
-        # Strip bot username if present (e.g., /list@nesher_shopping_bot)
+        # Strip bot username if present (e.g., /list@my_shopping_bot)
         command = text.split()[0].split("@")[0].lower()
         args = text[len(text.split()[0]):].strip()
 

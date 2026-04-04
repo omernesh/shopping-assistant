@@ -130,7 +130,7 @@ Or just chat naturally in Hebrew:
 קניתי חלב              → marks milk as purchased
 כמה עולה חלב           → price lookup for milk
 מחק לחם                → deletes bread
-מה עינב רצתה?          → shows items added by Einav
+מה נועה רצתה?          → shows items added by Noa
 ```
 
 ## Price Data Pipeline
@@ -158,13 +158,49 @@ python scripts/update_prices.py
 python scripts/scrape_cerberus_prices.py
 ```
 
-## Hermes Agent Integration
+## AI Agent Framework Integration
 
-The `hermes-skill/` directory contains the Hermes sub-agent skill for running this bot as part of the Sammie AI assistant system:
+This bot runs standalone, but can also be integrated as a skill or plugin in any AI agent framework.
 
-- `SKILL.md` — Identity, behavioral rules, tool policy
-- `references/identity.md` — Identity reference pointer
-- `references/tool-contract.md` — Allowed actions and execution contract
+### Standalone (direct Python)
+
+```bash
+python run_bot.py
+```
+
+No framework needed. The bot connects to Telegram directly via long-polling.
+
+### Claude Code (as a skill)
+
+Use the `hermes-skill/SKILL.md` as a template. Create a skill directory in your Claude Code project:
+
+```
+.claude/skills/shopping-assistant/
+├── SKILL.md          # Copy and adapt from hermes-skill/SKILL.md
+└── references/
+    ├── identity.md
+    └── tool-contract.md
+```
+
+The skill tells Claude Code how to invoke the shopping assistant's tool contract (add_item, show_list, mark_purchased, etc.) and when to stay silent.
+
+### OpenClaw (as a plugin)
+
+Register the bot as an OpenClaw skill by pointing to the tool contract:
+
+1. Copy `hermes-skill/SKILL.md` into your OpenClaw skills directory
+2. Map the 7 shopping actions (show_list, add_item, mark_purchased, delete_item, set_city, price_lookup, ignore) to OpenClaw tool handlers
+3. The bot's `src/app/router.py` exposes `handle_semantic_action()` which OpenClaw can call directly
+
+### Hermes Agent (as a skill)
+
+The `hermes-skill/` directory contains a ready-to-use Hermes Agent skill:
+
+- `SKILL.md` -- Identity, behavioral rules, tool policy
+- `references/identity.md` -- Identity reference
+- `references/tool-contract.md` -- Allowed actions and execution contract
+
+Copy the `hermes-skill/` directory into your Hermes skills path and configure the skill in your Hermes config.
 
 ## Tests
 

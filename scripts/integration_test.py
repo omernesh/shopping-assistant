@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
 # Use a separate test database
 TEST_DB = "/tmp/shopping_test.sqlite3"
-PRICE_DB = "/home/omer/.claude/projects/shopping assistant/data/prices.sqlite3"
+PRICE_DB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "prices.sqlite3")
 
 def setup():
     """Initialize full stack with test DB."""
@@ -57,7 +57,7 @@ def setup():
     return agent, router, store
 
 
-def ctx(text: str, user_id: str = "user1", user_name: str = "אומר", chat_id: str = "testchat1") -> MessageContext:
+def ctx(text: str, user_id: str = "user1", user_name: str = "דני", chat_id: str = "testchat1") -> MessageContext:
     """Create a message context."""
     return MessageContext(
         platform="telegram",
@@ -68,7 +68,7 @@ def ctx(text: str, user_id: str = "user1", user_name: str = "אומר", chat_id:
     )
 
 
-def test(agent, label: str, message: str, user_id="user1", user_name="אומר", chat_id="testchat1"):
+def test(agent, label: str, message: str, user_id="user1", user_name="דני", chat_id="testchat1"):
     """Run a single test and print result."""
     print(f"\n{'='*60}")
     print(f"TEST: {label}")
@@ -174,12 +174,12 @@ def main():
     # ===== SECTION 8: Multi-user simulation =====
     print("\n\n>>> SECTION 8: Multi-user simulation")
     
-    test(agent, "User Einav adds item", "2 חלב", user_id="user2", user_name="אינב")
-    test(agent, "User Einav adds more", "לחם שחור", user_id="user2", user_name="אינב")
+    test(agent, "User Noa adds item", "2 חלב", user_id="user2", user_name="נועה")
+    test(agent, "User Noa adds more", "לחם שחור", user_id="user2", user_name="נועה")
     test(agent, "User Yossi adds item", "6 בירה", user_id="user3", user_name="יוסי")
     test(agent, "User Yossi adds item", "נקניקיות", user_id="user3", user_name="יוסי")
-    test(agent, "Omer asks what Einav wanted", "מה אינב הוסיפה?", user_id="user1", user_name="אומר")
-    test(agent, "Omer asks what Yossi wanted", "מה יוסי רצה?", user_id="user1", user_name="אומר")
+    test(agent, "User1 asks what Noa wanted", "מה נועה הוסיפה?", user_id="user1", user_name="דני")
+    test(agent, "User1 asks what Yossi wanted", "מה יוסי רצה?", user_id="user1", user_name="דני")
     test(agent, "Show full list", "הצג את הרשימה")
     
     # ===== SECTION 9: Edge cases =====
