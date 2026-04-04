@@ -265,12 +265,11 @@ class TelegramPollingBot:
         chat_key = _chat_key(chat_id, thread_id)
 
         # Check for shopping mode activation/deactivation phrases (exact match only)
-        text_stripped = text.strip()
-        if text_stripped in ACTIVATION_PHRASES:
+        if text in ACTIVATION_PHRASES:
             self.shopping_mode.activate(chat_key)
             self.send_message(chat_id=chat_id, text=ACTIVATE_MSG, message_thread_id=thread_id)
             return
-        if text_stripped in DEACTIVATION_PHRASES:
+        if text in DEACTIVATION_PHRASES:
             self.shopping_mode.deactivate(chat_key)
             self.send_message(chat_id=chat_id, text=DEACTIVATE_MSG, message_thread_id=thread_id)
             return
@@ -528,7 +527,7 @@ class TelegramPollingBot:
                         store.update_item_status(
                             list_id=shopping_list.id,
                             query=found.normalized_name,
-                            status="purchased",
+                            status="bought",
                             acting_user_id=context.user_id,
                         )
                     try:
@@ -742,7 +741,7 @@ class TelegramPollingBot:
                        sl.name as list_name
                 FROM list_items li
                 JOIN shopping_lists sl ON li.list_id = sl.id
-                WHERE sl.chat_id = ? AND li.status = 'purchased'
+                WHERE sl.chat_id = ? AND li.status = 'bought'
                   AND li.updated_at >= datetime('now', '-30 days')
                 ORDER BY li.updated_at DESC
                 LIMIT 50
@@ -985,6 +984,7 @@ class TelegramPollingBot:
         list_name = row["name"]
 
         # Switch to the requested list
+        store.set_active_list(chat_id=chat.id, list_id=list_id)
         shopping_list = store.ensure_active_list(chat_id=chat.id, name=list_name)
         items = store.list_active_items(shopping_list.id)
 

@@ -359,7 +359,7 @@ class MediaHandler:
             return
         try:
             url = GEMINI_VISION_URL.format(model=VISION_MODEL)
-            self.session.post(
+            requests.post(
                 url,
                 params={"key": self.gemini_api_key},
                 headers={"Content-Type": "application/json"},

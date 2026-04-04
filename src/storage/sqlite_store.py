@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import sqlite3
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -208,6 +209,8 @@ def _add_column_if_missing(
     if table not in VALID_TABLES:
         raise ValueError(f"Invalid table name: {table}")
     if column not in existing_cols:
+        if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', column):
+            raise ValueError(f"Invalid column name: {column}")
         conn.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
         logger.info("Migration: added column %s.%s", table, column)
 
@@ -393,8 +396,11 @@ class SQLiteStore:
                 DELETE FROM price_cache
                 WHERE expires_at < datetime('now')
             """)
-            conn.execute("VACUUM")
             conn.commit()
+
+        vacuum_conn = sqlite3.connect(self.db_path, isolation_level=None)
+        vacuum_conn.execute("VACUUM")
+        vacuum_conn.close()
 
         new_size = self.get_db_size_bytes()
         logger.info("Shopping DB rotated: %d -> %d bytes", size, new_size)

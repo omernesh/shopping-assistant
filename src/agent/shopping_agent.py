@@ -137,10 +137,11 @@ class ShoppingAgent:
                 # Filter by user if provided
                 if user_name:
                     return self.router.list_items_by_user_name(context, user_name=user_name)
-                # Show a specific named list if provided
+                # Show a specific named list without switching the active list
                 if list_name:
                     chat_id = self._get_chat_id(context)
-                    self.router.switch_list(chat_id, list_name)
+                    sl = self.router.store.ensure_active_list(chat_id=chat_id, name=list_name)
+                    return self.router._format_list(self.router.store.list_active_items(sl.id))
                 return self.router.handle_semantic_action(context, action="show")
 
             elif name == "add_item":

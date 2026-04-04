@@ -482,6 +482,7 @@ class ShoppingAssistantRouter:
         context: MessageContext,
         *,
         item_name: str,
+        **kwargs,
     ) -> str:
         """Mark item as bought with price re-lookup at purchase time."""
         chat, shopping_list = self._ensure_chat_and_list(context)

@@ -44,13 +44,15 @@ def main() -> None:
             logging.warning("ANALYZE failed for %s: %s (non-fatal)", _db_path, exc)
     router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db, price_service=price_service)
     price_db.rotate_if_needed(max_bytes=250 * 1024 * 1024)
-    size_mb = price_db.get_db_size_bytes() / (1024 * 1024)
+    price_db_size = price_db.get_db_size_bytes()
+    store_db_size = store.get_db_size_bytes()
+    size_mb = price_db_size / (1024 * 1024)
     logging.info("Price DB loaded (%.1f MB)", size_mb)
-    total_mb = (store.get_db_size_bytes() + price_db.get_db_size_bytes()) / (1024 * 1024)
+    total_mb = (store_db_size + price_db_size) / (1024 * 1024)
     logging.info("Total storage: %.1f MB (shopping: %.1f MB, prices: %.1f MB)",
         total_mb,
-        store.get_db_size_bytes() / (1024 * 1024),
-        price_db.get_db_size_bytes() / (1024 * 1024),
+        store_db_size / (1024 * 1024),
+        price_db_size / (1024 * 1024),
     )
     logging.info("CHP price lookup enabled (fallback)")
 
