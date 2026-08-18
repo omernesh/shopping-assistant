@@ -1,7 +1,7 @@
 # Shopping Assistant Pilot Bug Tracking
 
-Project: /home/omer/.claude/projects/shopping assistant
-Bot under test: @nesher_shopping_bot
+Project: shopping-assistant
+Bot under test: your Telegram bot instance
 Pilot environment: Telegram group/topic
 
 ## How to use this file

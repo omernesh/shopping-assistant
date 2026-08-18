@@ -111,7 +111,7 @@ def test_handle_ignores_meta_chatter_without_polluting_list(tmp_path: Path) -> N
         platform="telegram",
         external_chat_id="123:7",
         user_id="42",
-        text="sammie, did you see the reply of the shopping assistant bot?",
+        text="hey bot, did you see the reply of the shopping assistant bot?",
         title="Shopping Group",
     )
 

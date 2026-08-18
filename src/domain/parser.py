@@ -27,8 +27,8 @@ UNIT_MAP = {
 }
 URL_RE = re.compile(r"https?://|www\.", re.IGNORECASE)
 META_MARKERS = (
-    "sammie",
     "shopping assistant bot",
+    "hey bot",
     "you are joining",
     "pilot",
     "bug tracking",

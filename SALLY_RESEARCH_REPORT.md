@@ -174,7 +174,7 @@ The creator mentioned these planned features:
 
 ## 9. For Claude Skill Development
 
-To create a "Sally-like" shopping assistant skill for Chatlytics/Chet, consider implementing:
+To create a "Sally-like" shopping assistant, consider implementing:
 
 ### Core Capabilities
 1. **Natural Language Item Parsing** - Extract items from casual text

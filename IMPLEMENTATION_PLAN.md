@@ -505,13 +505,13 @@ That is the difference between “neat utility” and “daily-use product”.
 ## Next implementation artifact I recommend
 
 Create these first:
-- /home/omer/.claude/projects/shopping assistant/src/
-- /home/omer/.claude/projects/shopping assistant/tests/
-- /home/omer/.claude/projects/shopping assistant/docs/
-- /home/omer/.claude/projects/shopping assistant/src/domain/
-- /home/omer/.claude/projects/shopping assistant/src/integrations/
-- /home/omer/.claude/projects/shopping assistant/src/channels/
-- /home/omer/.claude/projects/shopping assistant/src/storage/
+- src/
+- tests/
+- docs/
+- src/domain/
+- src/integrations/
+- src/channels/
+- src/storage/
 
 And first real files:
 - src/domain/parser.py

@@ -13,9 +13,10 @@ DEFAULT_CITY_ID = 2660
 DEFAULT_STREET_ID = 9000
 DEFAULT_CHP_BASE_URL = "https://chp.co.il"
 DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
-HERMES_ENV_PATH = Path.home() / ".hermes" / ".env"
-DEFAULT_LLM_MODEL = "MiniMax-M2.7"
-DEFAULT_LLM_BASE_URL = "https://api.minimax.io/anthropic"
+EXTRA_ENV_PATH = Path(os.getenv("SHOPPING_ASSISTANT_EXTRA_ENV", str(Path.home() / ".env")))
+MAX_DB_SIZE_BYTES = 250 * 1024 * 1024  # 250 MB
+DEFAULT_LLM_MODEL = "deepseek-chat"
+DEFAULT_LLM_BASE_URL = "https://api.deepseek.com"
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class Settings:
     agent_enabled: bool = True
     soniox_api_key: str | None = None
     gemini_api_key: str | None = None
+    super_admin_id: str = ""
 
 
 def _load_dotenv(env_path: Path) -> None:
@@ -52,6 +54,14 @@ def _load_dotenv(env_path: Path) -> None:
         os.environ.setdefault(key, value)
 
 
+def _env_int(key: str, default: int) -> int:
+    val = os.getenv(key, str(default))
+    try:
+        return int(val)
+    except ValueError:
+        raise ValueError(f"Environment variable {key} must be an integer, got: {val!r}")
+
+
 def _env_bool(name: str, default: bool) -> bool:
     value = os.getenv(name)
     if value is None:
@@ -60,22 +70,23 @@ def _env_bool(name: str, default: bool) -> bool:
 
 
 def load_settings() -> Settings:
-    _load_dotenv(HERMES_ENV_PATH)
+    _load_dotenv(EXTRA_ENV_PATH)
     _load_dotenv(DEFAULT_ENV_PATH)
     db_path = Path(os.getenv("SHOPPING_ASSISTANT_DB_PATH", str(DEFAULT_DB_PATH)))
 
     return Settings(
         telegram_bot_token=os.getenv("SHOPPING_BOT_TOKEN"),
         default_city=os.getenv("SHOPPING_ASSISTANT_DEFAULT_CITY", DEFAULT_CITY),
-        default_city_id=int(os.getenv("SHOPPING_ASSISTANT_DEFAULT_CITY_ID", str(DEFAULT_CITY_ID))),
-        default_street_id=int(os.getenv("SHOPPING_ASSISTANT_DEFAULT_STREET_ID", str(DEFAULT_STREET_ID))),
+        default_city_id=_env_int("SHOPPING_ASSISTANT_DEFAULT_CITY_ID", DEFAULT_CITY_ID),
+        default_street_id=_env_int("SHOPPING_ASSISTANT_DEFAULT_STREET_ID", DEFAULT_STREET_ID),
         chp_base_url=os.getenv("SHOPPING_ASSISTANT_CHP_BASE_URL", DEFAULT_CHP_BASE_URL),
         db_path=db_path,
-        cache_ttl_seconds=int(os.getenv("SHOPPING_ASSISTANT_CACHE_TTL_SECONDS", str(DEFAULT_CACHE_TTL_SECONDS))),
+        cache_ttl_seconds=_env_int("SHOPPING_ASSISTANT_CACHE_TTL_SECONDS", DEFAULT_CACHE_TTL_SECONDS),
         llm_api_key=os.getenv("LLM_API_KEY") or os.getenv("MINIMAX_API_KEY"),
         llm_model=os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL),
         llm_base_url=os.getenv("LLM_BASE_URL", DEFAULT_LLM_BASE_URL),
         agent_enabled=_env_bool("SHOPPING_ASSISTANT_AGENT_ENABLED", True),
         soniox_api_key=os.getenv("SONIOX_API_KEY"),
         gemini_api_key=os.getenv("GEMINI_API_KEY"),
+        super_admin_id=os.getenv("SUPER_ADMIN_ID", ""),
     )

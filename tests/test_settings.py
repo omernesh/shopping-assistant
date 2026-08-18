@@ -32,7 +32,7 @@ def test_load_settings_reads_llm_key_from_minimax_env(monkeypatch) -> None:
     monkeypatch.setenv("MINIMAX_API_KEY", "mm-key")
     monkeypatch.delenv("SHOPPING_ASSISTANT_AGENT_ENABLED", raising=False)
     import src.config.settings as settings_mod
-    monkeypatch.setattr(settings_mod, "HERMES_ENV_PATH", Path("/nonexistent/.env"))
+    monkeypatch.setattr(settings_mod, "EXTRA_ENV_PATH", Path("/nonexistent/.env"))
     monkeypatch.setattr(settings_mod, "DEFAULT_ENV_PATH", Path("/nonexistent/.env"))
 
     settings = load_settings()
@@ -58,7 +58,7 @@ def test_load_settings_falls_back_to_minimax_key(monkeypatch) -> None:
     monkeypatch.delenv("SHOPPING_ASSISTANT_AGENT_ENABLED", raising=False)
     # Prevent _load_dotenv from loading GROQ_API_KEY from ~/.hermes/.env
     import src.config.settings as settings_mod
-    monkeypatch.setattr(settings_mod, "HERMES_ENV_PATH", Path("/nonexistent/.env"))
+    monkeypatch.setattr(settings_mod, "EXTRA_ENV_PATH", Path("/nonexistent/.env"))
     monkeypatch.setattr(settings_mod, "DEFAULT_ENV_PATH", Path("/nonexistent/.env"))
 
     settings = load_settings()

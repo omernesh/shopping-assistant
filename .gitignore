@@ -3,3 +3,7 @@
 __pycache__/
 *.pyc
 data/*.sqlite3
+
+# Local data + build artifacts
+data/
+*.egg-info/
