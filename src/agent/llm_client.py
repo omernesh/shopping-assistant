@@ -283,6 +283,69 @@ TOOLS = [
             }
         }
     },
+    {
+        "name": "show_lists",
+        "description": "הצג את כל רשימות הקניות",
+        "input_schema": {"type": "object", "properties": {}}
+    },
+    {
+        "name": "switch_list",
+        "description": "עבור לרשימה אחרת",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "list_name": {"type": "string", "description": "שם הרשימה לעבור אליה"}
+            },
+            "required": ["list_name"]
+        }
+    },
+    {
+        "name": "create_list",
+        "description": "צור רשימת קניות חדשה",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "list_name": {"type": "string", "description": "שם הרשימה החדשה"}
+            },
+            "required": ["list_name"]
+        }
+    },
+    {
+        "name": "move_items",
+        "description": "העבר פריטים לרשימה אחרת",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item_names": {
+                    "type": "array",
+                    "items": {"type": "string"},
+                    "description": "שמות הפריטים להעברה"
+                },
+                "target_list_name": {"type": "string", "description": "שם רשימת היעד"}
+            },
+            "required": ["item_names", "target_list_name"]
+        }
+    },
+    {
+        "name": "complete_list",
+        "description": "סיים רשימה ושמור בהיסטוריה",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "list_name": {"type": "string", "description": "שם הרשימה לסיום (אם לא צוין — הרשימה הפעילה)"}
+            }
+        }
+    },
+    {
+        "name": "show_history",
+        "description": "הצג היסטוריית קניות והוצאות",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "months_back": {"type": "integer", "description": "כמה חודשים אחורה (ברירת מחדל: 1)", "default": 1}
+            }
+        }
+    },
 ]
 
 
