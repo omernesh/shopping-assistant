@@ -172,7 +172,9 @@ def main():
     parser = argparse.ArgumentParser(description="Scrape Cerberus price portals")
     parser.add_argument("--chain", choices=list(CHAINS.keys()), help="Single chain only")
     parser.add_argument("--max-files", type=int, default=3, help="Max files per chain")
-    parser.add_argument("--db", type=Path, default=None, help="Price DB path (default: ./data/prices.sqlite3)")
+    parser.add_argument(
+        "--db", type=Path, default=None, help="Price DB path (default: ./data/prices.sqlite3)"
+    )
     args = parser.parse_args()
 
     db = PriceDB(args.db or PRICE_DB_PATH)
