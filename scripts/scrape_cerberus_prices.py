@@ -106,7 +106,7 @@ def scrape_chain(chain_name: str, config: dict, db: PriceDB, max_files: int = 3)
             store_files: dict[str, dict] = {}
             for f in price_files:
                 parts = re.findall(r'\d+', f["name"])
-                store_id = parts[1] if len(parts) > 1 else "0"
+                store_id = parts[2] if len(parts) > 2 else (parts[1] if len(parts) > 1 else "0")
                 # Keep last (most recent) per store
                 store_files[store_id] = f
 
@@ -135,7 +135,9 @@ def scrape_chain(chain_name: str, config: dict, db: PriceDB, max_files: int = 3)
                         raw_bytes = gzip.decompress(raw_bytes)
 
                     # Ingest
-                    count = db.ingest_xml(raw_bytes, chain=config["chain_id"], store_id=store_id)
+                    count = db.ingest_xml(
+                        raw_bytes, chain=config["chain_id"], store_id=store_id, replace_store=True
+                    )
                     total_items += count
                     downloaded += 1
                     logger.info("Ingested %d items from store %s", count, store_id)

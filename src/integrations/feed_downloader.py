@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 import sqlite3
 from pathlib import Path
 
@@ -89,6 +90,19 @@ def _escape_like(s: str) -> str:
     return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
 
+def store_id_from_filename(name: str) -> str:
+    """Extract the store number from a PriceFull filename or URL.
+
+    Format: ``PriceFull<chainId>-<subChainId>-<storeId>-<date>-<time>.gz``;
+    URLs carry query strings (e.g. Azure SAS) that must be ignored.
+    """
+    base = name.split("/")[-1].split("?")[0]
+    groups = re.findall(r"\d+", base)
+    if len(groups) >= 3:
+        return groups[2]
+    return groups[1] if len(groups) >= 2 else (groups[0] if groups else "")
+
+
 class PriceDB:
     """Local SQLite price database populated from chain XML feeds."""
 
@@ -166,8 +180,14 @@ class PriceDB:
         logger.info("Price DB rotated: %d -> %d bytes", size, new_size)
         return True
 
-    def ingest_xml(self, xml_bytes: bytes, chain: str, store_id: str = "") -> int:
-        """Parse XML feed bytes and insert products into the DB."""
+    def ingest_xml(
+        self, xml_bytes: bytes, chain: str, store_id: str = "", *, replace_store: bool = False
+    ) -> int:
+        """Parse XML feed bytes and insert products into the DB.
+
+        With ``replace_store`` the (chain, store) snapshot is replaced instead of appended
+        (products has no unique constraint, so plain INSERT OR REPLACE would always append).
+        """
         field_map = FIELD_MAPS.get(chain) or FIELD_MAPS["shufersal"]
 
         text = None
@@ -225,6 +245,11 @@ class PriceDB:
             ))
 
         with self._connect() as conn:
+            if replace_store:
+                conn.execute(
+                    "DELETE FROM products WHERE chain = ? AND store_id = ?",
+                    (chain, store_id),
+                )
             conn.executemany(
                 """INSERT OR REPLACE INTO products (item_code, item_name, manufacturer, price, unit_price,
                    quantity, unit_of_measure, is_weighted, chain, store_id, update_date)

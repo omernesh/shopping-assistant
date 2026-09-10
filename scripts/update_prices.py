@@ -20,7 +20,11 @@ import requests
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.integrations.feed_downloader import CHAIN_FEEDS, PriceDB  # noqa: E402  (import after sys.path setup)
+from src.integrations.feed_downloader import (  # noqa: E402  (import after sys.path setup)
+    CHAIN_FEEDS,
+    PriceDB,
+    store_id_from_filename,
+)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -59,10 +63,9 @@ def download_and_ingest(url: str, chain: str, db: PriceDB, session: requests.Ses
         if ".gz" in url:
             raw = gzip.decompress(raw)
 
-        store_match = re.search(r'(\d{3,})', url.split("/")[-1])
-        store_id = store_match.group(1) if store_match else ""
+        store_id = store_id_from_filename(url)
 
-        count = db.ingest_xml(raw, chain=chain, store_id=store_id)
+        count = db.ingest_xml(raw, chain=chain, store_id=store_id, replace_store=True)
         logger.info("Ingested %d items from %s (store %s)", count, chain, store_id)
         return count
     except Exception as e:
@@ -99,7 +102,7 @@ def fetch_carrefour_feeds(session: requests.Session, db: PriceDB, max_stores: in
             name = f["name"]
             # Extract store ID
             parts = name.replace("PriceFull", "").split("-")
-            store_id = parts[1] if len(parts) > 1 else "unknown"
+            store_id = parts[2] if len(parts) > 2 else (parts[1] if len(parts) > 1 else "unknown")
             if store_id in seen_stores:
                 continue
             seen_stores.add(store_id)
