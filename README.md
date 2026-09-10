@@ -6,14 +6,14 @@
 
 ![Python](https://img.shields.io/badge/python-3.11+-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![LLM](https://img.shields.io/badge/LLM-MiniMax%20M2.7-purple)
+![LLM](https://img.shields.io/badge/LLM-DeepSeek-blueviolet)
 ![Platform](https://img.shields.io/badge/platform-Telegram-blue)
 
 </div>
 
 ## What It Does
 
-A Telegram bot that manages shared shopping lists through natural Hebrew conversation. Each Telegram group or forum topic gets its own list. An AI agent (MiniMax M2.7) understands shopping intent from casual messages and routes them to the right action — or stays silent when the message isn't about shopping.
+A Telegram bot that manages shared shopping lists through natural Hebrew conversation. Each Telegram group or forum topic gets its own list. An AI agent (DeepSeek) understands shopping intent from casual messages and routes them to the right action — or stays silent when the message isn't about shopping.
 
 ### Features
 
@@ -35,7 +35,7 @@ A Telegram bot that manages shared shopping lists through natural Hebrew convers
 - Supports 16 Israeli cities, barcode search
 
 **AI Agent**
-- MiniMax M2.7 via Anthropic-compatible API with tool calling (10 tools)
+- DeepSeek via OpenAI-compatible API with tool calling (16 tools)
 - Multi-round tool loop (up to 5 rounds per message)
 - Smart silence — ignores non-shopping group chatter, URLs, numbers, long messages
 - Graceful fallback to regex parser if LLM is unavailable
@@ -45,7 +45,7 @@ A Telegram bot that manages shared shopping lists through natural Hebrew convers
 ```
 src/
 ├── agent/              # LLM client + tool-calling agent loop
-│   ├── llm_client.py   # Anthropic-compatible HTTP transport + system prompt + tool defs
+│   ├── llm_client.py   # OpenAI-compatible HTTP transport + system prompt + tool defs
 │   └── shopping_agent.py  # Agent loop with duplicate/price disambiguation
 ├── app/
 │   └── router.py       # Central action router — bridges intents to storage
@@ -74,7 +74,7 @@ src/
 
 - Python 3.11+
 - A Telegram bot token (from [@BotFather](https://t.me/BotFather))
-- A MiniMax API key (or any Anthropic-compatible LLM provider)
+- A DeepSeek API key (or any OpenAI-compatible LLM provider)
 
 ### Install
 
@@ -97,13 +97,12 @@ Edit `.env`:
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `SHOPPING_BOT_TOKEN` | Yes | Telegram bot token |
-| `LLM_API_KEY` | Yes | MiniMax (or compatible) API key |
+| `LLM_API_KEY` | Yes | DeepSeek (or compatible) API key |
 | `SHOPPING_ASSISTANT_DB_PATH` | No | SQLite path (default: `./data/shopping_assistant.sqlite3`) |
 | `SHOPPING_ASSISTANT_DEFAULT_CITY` | No | Default city in Hebrew (default: `יבנה`) |
 | `SHOPPING_ASSISTANT_DEFAULT_CITY_ID` | No | CHP city ID (default: `2660`) |
 | `SHOPPING_ASSISTANT_DEFAULT_STREET_ID` | No | CHP street ID (default: `9000`) |
 | `SHOPPING_ASSISTANT_CACHE_TTL_SECONDS` | No | Price cache TTL (default: `21600` / 6 hours) |
-| `LLM_API_KEY` | Yes | OpenRouter or DeepSeek API key |
 | `LLM_MODEL` | No | Model name (default: `deepseek-chat`) |
 | `LLM_BASE_URL` | No | API base URL (default: `https://api.deepseek.com`) |
 | `SHOPPING_ASSISTANT_AGENT_ENABLED` | No | Enable LLM agent (default: `true`) |
@@ -122,6 +121,9 @@ python run_bot.py
 | `/list` | Show current shopping list |
 | `/clear` | Clear all items |
 | `/city <name>` | Set your city for price lookups |
+| `/shop` | Toggle "at the store" mode — items you send are marked as purchased |
+| `/lists` | Show all lists and switch between them |
+| `/history` | Purchase history (last 30 days) |
 | `/help` | Show help |
 
 Or just chat naturally in Hebrew:
@@ -145,9 +147,9 @@ The bot has two price data sources:
 
 **2. Official supermarket XML feeds (local DB)**
 - Government-mandated price transparency data
-- Shufersal (Azure blob), Carrefour (HTML listing), TivTaam/Rami Levy/Yochananof (Cerberus FTP)
+- Shufersal (Azure blob), Carrefour (HTML listing), TivTaam/Rami Levy/Yochananof (Cerberus portals)
 - Ingested into a local SQLite price DB (`prices.sqlite3`)
-- Auto-rotates at 250MB, 7-day expiry
+- Weekly refresh, 7-day retention, 250MB rotation cap
 
 ### Update prices
 
@@ -155,8 +157,11 @@ The bot has two price data sources:
 # Download Shufersal + Carrefour feeds
 python scripts/update_prices.py
 
+# Target a specific DB (e.g. the live deployment's)
+python scripts/update_prices.py --db /path/to/prices.sqlite3
+
 # Scrape Cerberus portals (requires Playwright)
-python scripts/scrape_cerberus_prices.py
+python scripts/scrape_cerberus_prices.py --db /path/to/prices.sqlite3
 ```
 
 ## AI Agent Framework Integration
@@ -190,7 +195,7 @@ The skill tells Claude Code how to invoke the shopping assistant's tool contract
 Register the bot as an OpenClaw skill by pointing to the tool contract:
 
 1. Copy `hermes-skill/SKILL.md` into your OpenClaw skills directory
-2. Map the 7 shopping actions (show_list, add_item, mark_purchased, delete_item, set_city, price_lookup, ignore) to OpenClaw tool handlers
+2. Map the shopping actions (show_list, add_item, mark_purchased, delete_item, set_city, price_lookup, and the multi-list tools) to OpenClaw tool handlers
 3. The bot's `src/app/router.py` exposes `handle_semantic_action()` which OpenClaw can call directly
 
 ### Hermes Agent (as a skill)
@@ -208,6 +213,9 @@ Copy the `hermes-skill/` directory into your Hermes skills path and configure th
 ```bash
 # Unit tests
 pytest tests/
+
+# Lint
+ruff check
 
 # Integration test (requires LLM API key + Telegram token)
 python scripts/integration_test.py
