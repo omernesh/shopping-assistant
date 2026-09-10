@@ -4,7 +4,8 @@ import json
 import logging
 import re
 import sqlite3
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -338,14 +339,24 @@ class SQLiteStore:
     def __init__(self, db_path: str | Path):
         self.db_path = Path(db_path)
 
-    def connect(self) -> sqlite3.Connection:
+    @contextmanager
+    def connect(self) -> Iterator[sqlite3.Connection]:
+        """Yield a connection that is ALWAYS closed on exit (including on return/raise).
+
+        Note: ``with sqlite3.Connection`` only commits/rolls back -- it does not close,
+        so every call site previously leaked its connection until GC. Callers continue to
+        use ``with store.connect() as conn:`` and keep their explicit commits.
+        """
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        conn.execute("PRAGMA foreign_keys = ON")
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA busy_timeout=5000")
-        return conn
+        try:
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA foreign_keys = ON")
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=5000")
+            yield conn
+        finally:
+            conn.close()
 
     def initialize(self) -> None:
         with self.connect() as conn:
@@ -401,6 +412,7 @@ class SQLiteStore:
             conn.commit()
 
         vacuum_conn = sqlite3.connect(self.db_path, isolation_level=None)
+        vacuum_conn.execute("PRAGMA busy_timeout=30000")
         vacuum_conn.execute("VACUUM")
         vacuum_conn.close()
 
@@ -466,8 +478,7 @@ class SQLiteStore:
         If no active list is set, default to the 'main' list (creating if
         needed) and persist the choice.  Entire read-check-write in one connection.
         """
-        conn = self.connect()
-        try:
+        with self.connect() as conn:
             row = conn.execute(
                 "SELECT active_list_id FROM chats WHERE id = ?", (chat_id,)
             ).fetchone()
@@ -493,8 +504,6 @@ class SQLiteStore:
             )
             conn.commit()
             return list_id
-        finally:
-            conn.close()
 
     def set_active_list(self, *, chat_id: int, list_id: int) -> None:
         """Set the working list for a chat."""

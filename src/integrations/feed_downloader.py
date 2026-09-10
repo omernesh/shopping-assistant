@@ -3,8 +3,12 @@ from __future__ import annotations
 
 import logging
 import sqlite3
-import xml.etree.ElementTree as ET
 from pathlib import Path
+
+try:  # defusedxml is hardened against XML entity-expansion / external-entity attacks
+    from defusedxml import ElementTree as ET
+except ImportError:  # pragma: no cover - optional hardening; stdlib still works
+    import xml.etree.ElementTree as ET
 
 logger = logging.getLogger(__name__)
 
@@ -80,6 +84,11 @@ def _safe_float(s: str) -> float | None:
         return None
 
 
+def _escape_like(s: str) -> str:
+    """Escape LIKE metacharacters so a user query cannot act as a wildcard."""
+    return s.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
 class PriceDB:
     """Local SQLite price database populated from chain XML feeds."""
 
@@ -99,6 +108,7 @@ class PriceDB:
 
     def search_product(self, query: str, limit: int = 20) -> list[dict]:
         """Search products by name. Prefers exact matches, falls back to LIKE."""
+        escaped = _escape_like(query)
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             # Try prefix match first (item name starts with query)
@@ -106,11 +116,11 @@ class PriceDB:
                 """
                 SELECT item_name, manufacturer, price, unit_price, chain, store_id, update_date
                 FROM products
-                WHERE item_name LIKE ?
+                WHERE item_name LIKE ? ESCAPE '\\'
                 ORDER BY price ASC
                 LIMIT ?
                 """,
-                (f"{query}%", limit),
+                (f"{escaped}%", limit),
             ).fetchall()
 
             if not rows:
@@ -119,11 +129,11 @@ class PriceDB:
                     """
                     SELECT item_name, manufacturer, price, unit_price, chain, store_id, update_date
                     FROM products
-                    WHERE item_name LIKE ?
+                    WHERE item_name LIKE ? ESCAPE '\\'
                     ORDER BY price ASC
                     LIMIT ?
                     """,
-                    (f"%{query}%", limit),
+                    (f"%{escaped}%", limit),
                 ).fetchall()
         return [dict(r) for r in rows]
 
@@ -148,6 +158,7 @@ class PriceDB:
         # VACUUM must run outside transaction
         vacuum_conn = sqlite3.connect(self.db_path, isolation_level=None)
         try:
+            vacuum_conn.execute("PRAGMA busy_timeout=30000")
             vacuum_conn.execute("VACUUM")
         finally:
             vacuum_conn.close()
@@ -230,6 +241,7 @@ class PriceDB:
 
     def find_matching_products(self, query: str, limit: int = 8) -> list[dict]:
         """Find distinct products matching the query."""
+        escaped = _escape_like(query)
         with self._connect() as conn:
             conn.row_factory = sqlite3.Row
             # Prefer starts-with match
@@ -237,11 +249,11 @@ class PriceDB:
                 """
                 SELECT DISTINCT item_name, item_code, price, manufacturer, chain
                 FROM products
-                WHERE item_name LIKE ?
+                WHERE item_name LIKE ? ESCAPE '\\'
                 ORDER BY price ASC
                 LIMIT ?
                 """,
-                (f"{query}%", limit),
+                (f"{escaped}%", limit),
             ).fetchall()
 
             if len(rows) < 2:
@@ -249,11 +261,11 @@ class PriceDB:
                     """
                     SELECT DISTINCT item_name, item_code, price, manufacturer, chain
                     FROM products
-                    WHERE item_name LIKE ?
+                    WHERE item_name LIKE ? ESCAPE '\\'
                     ORDER BY price ASC
                     LIMIT ?
                     """,
-                    (f"%{query}%", limit),
+                    (f"%{escaped}%", limit),
                 ).fetchall()
         return [dict(r) for r in rows]
 

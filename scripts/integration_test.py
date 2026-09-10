@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 import os
 import sys
+import tempfile
 import time
 
 # Add project root
@@ -22,7 +23,7 @@ from src.storage.sqlite_store import SQLiteStore
 logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 
 # Use a separate test database
-TEST_DB = "/tmp/shopping_test.sqlite3"
+TEST_DB = os.path.join(tempfile.gettempdir(), "shopping_test.sqlite3")
 PRICE_DB = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "prices.sqlite3")
 
 def setup():
@@ -103,10 +104,6 @@ def test(agent, label: str, message: str, user_id="user1", user_name="דני", c
     except Exception as e:
         print(f"ERROR: {e}")
         return False
-
-    print(f"{'='*60}")
-    # Small delay to avoid rate limiting MiniMax
-    time.sleep(1)
 
 
 def main():
