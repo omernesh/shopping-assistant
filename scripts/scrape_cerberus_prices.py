@@ -158,6 +158,7 @@ def _rotate_old_prices(db: PriceDB) -> None:
     """Delete price entries older than 7 days."""
     import sqlite3
     conn = sqlite3.connect(str(db.db_path), isolation_level=None)  # autocommit for VACUUM
+    conn.execute("PRAGMA busy_timeout=30000")
     try:
         deleted = conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount
         if deleted:
@@ -171,13 +172,11 @@ def main():
     parser = argparse.ArgumentParser(description="Scrape Cerberus price portals")
     parser.add_argument("--chain", choices=list(CHAINS.keys()), help="Single chain only")
     parser.add_argument("--max-files", type=int, default=3, help="Max files per chain")
+    parser.add_argument("--db", type=Path, default=None, help="Price DB path (default: ./data/prices.sqlite3)")
     args = parser.parse_args()
 
-    db = PriceDB(PRICE_DB_PATH)
+    db = PriceDB(args.db or PRICE_DB_PATH)
     db.initialize()
-
-    # Rotate old prices (keep only last 7 days)
-    _rotate_old_prices(db)
 
     chains = {args.chain: CHAINS[args.chain]} if args.chain else CHAINS
     total = 0
@@ -185,6 +184,10 @@ def main():
     for name, config in chains.items():
         count = scrape_chain(name, config, db, max_files=args.max_files)
         total += count
+
+    # Prune entries older than 7 days AFTER fresh ingest -- a failed scrape
+    # must never wipe existing prices.
+    _rotate_old_prices(db)
 
     size_mb = db.get_db_size_bytes() / (1024 * 1024)
     logger.info("Done. Total: %d items, DB: %.1f MB", total, size_mb)
