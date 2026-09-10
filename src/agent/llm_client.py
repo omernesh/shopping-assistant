@@ -5,6 +5,8 @@ import logging
 from dataclasses import dataclass, field
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 logger = logging.getLogger(__name__)
 
@@ -283,69 +285,6 @@ TOOLS = [
             }
         }
     },
-    {
-        "name": "show_lists",
-        "description": "הצג את כל רשימות הקניות",
-        "input_schema": {"type": "object", "properties": {}}
-    },
-    {
-        "name": "switch_list",
-        "description": "עבור לרשימה אחרת",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "list_name": {"type": "string", "description": "שם הרשימה לעבור אליה"}
-            },
-            "required": ["list_name"]
-        }
-    },
-    {
-        "name": "create_list",
-        "description": "צור רשימת קניות חדשה",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "list_name": {"type": "string", "description": "שם הרשימה החדשה"}
-            },
-            "required": ["list_name"]
-        }
-    },
-    {
-        "name": "move_items",
-        "description": "העבר פריטים לרשימה אחרת",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "item_names": {
-                    "type": "array",
-                    "items": {"type": "string"},
-                    "description": "שמות הפריטים להעברה"
-                },
-                "target_list_name": {"type": "string", "description": "שם רשימת היעד"}
-            },
-            "required": ["item_names", "target_list_name"]
-        }
-    },
-    {
-        "name": "complete_list",
-        "description": "סיים רשימה ושמור בהיסטוריה",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "list_name": {"type": "string", "description": "שם הרשימה לסיום (אם לא צוין — הרשימה הפעילה)"}
-            }
-        }
-    },
-    {
-        "name": "show_history",
-        "description": "הצג היסטוריית קניות והוצאות",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "months_back": {"type": "integer", "description": "כמה חודשים אחורה (ברירת מחדל: 1)", "default": 1}  # noqa: E501
-            }
-        }
-    },
 ]
 
 
@@ -355,6 +294,7 @@ class LLMConfig:
     model: str = "deepseek-chat"
     base_url: str = "https://api.deepseek.com"
     timeout: int = 30
+    max_tokens: int = 1024
 
     def __repr__(self):
         return f"LLMConfig(model={self.model!r}, base_url={self.base_url!r}, api_key='***')"
@@ -382,13 +322,24 @@ class LLMTransport:
             "Authorization": f"Bearer {config.api_key}",
             "Content-Type": "application/json",
         })
+        # Retry transient provider errors so a single 429/5xx does not silently
+        # drop the whole message to the regex-parser fallback.
+        retry = Retry(
+            total=2,
+            backoff_factor=0.5,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods={"POST"},
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
         self.messages_url = f"{config.base_url.rstrip('/')}/v1/chat/completions"
 
     def send(self, *, system: str, messages: list[dict], tools: list[dict] | None = None) -> LLMResponse:
         full_messages = [{"role": "system", "content": system}] + list(messages)
         payload: dict = {
             "model": self.config.model,
-            "max_tokens": 1024,
+            "max_tokens": self.config.max_tokens,
             "messages": full_messages,
         }
         if tools:
@@ -428,8 +379,14 @@ class LLMTransport:
             try:
                 args = json.loads(raw_args)
             except json.JSONDecodeError:
-                logger.warning("Failed to parse tool_call arguments for %s: %s", name, raw_args)
-                args = {}
+                # Truncated (stop_reason == "length") or malformed arguments would
+                # otherwise become a tool call with empty args (e.g. add_item with
+                # item_name=""). Drop the call instead of executing a blank one.
+                logger.warning(
+                    "Dropping tool_call %s with unparseable arguments (stop_reason=%s): %s",
+                    name, stop_reason, raw_args,
+                )
+                continue
             result.tool_calls.append(ToolCall(id=tc_id, name=name, input=args))
 
         return result

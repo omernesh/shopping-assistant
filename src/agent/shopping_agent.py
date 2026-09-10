@@ -2,11 +2,8 @@ from __future__ import annotations
 
 import json
 import logging
-import sqlite3
 from collections import OrderedDict
 from typing import Any
-
-import requests
 
 from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMTransport, ToolCall
 from src.app.router import DuplicateConflict, MessageContext, ShoppingAssistantRouter
@@ -261,6 +258,8 @@ class ShoppingAgent:
 
             else:
                 return f"Unknown tool: {name}"
-        except (sqlite3.Error, requests.RequestException, ValueError, KeyError) as exc:
+        except Exception as exc:
+            # Any tool failure (DB, network, bad args, router signature drift) must
+            # surface as a tool result string, not abort the whole LLM turn.
             logger.exception("Tool %s failed: %s", name, exc)
             return f"Error: {exc}"
