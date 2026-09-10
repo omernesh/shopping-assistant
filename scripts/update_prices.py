@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """Nightly price feed updater. Downloads latest feeds and populates the local price DB.
 
-Usage: python scripts/update_prices.py
+Usage: python scripts/update_prices.py [--db PATH]
 Designed to run as a cron job on HPG6.
 """
 from __future__ import annotations
 
+import argparse
 import gzip
 import json
 import logging
@@ -121,6 +122,7 @@ def _rotate_old_prices(db: PriceDB) -> None:
     """Delete price entries older than 7 days."""
     import sqlite3
     conn = sqlite3.connect(str(db.db_path), isolation_level=None)  # autocommit for VACUUM
+    conn.execute("PRAGMA busy_timeout=30000")
     try:
         deleted = conn.execute("DELETE FROM products WHERE fetched_at < datetime('now', '-7 days')").rowcount
         if deleted:
@@ -130,14 +132,11 @@ def _rotate_old_prices(db: PriceDB) -> None:
         conn.close()
 
 
-def main():
-    db = PriceDB(PRICE_DB_PATH)
+def main(db_path: Path | None = None):
+    db = PriceDB(db_path or PRICE_DB_PATH)
     db.initialize()
 
     db.rotate_if_needed(MAX_DB_SIZE)
-
-    # Rotate old prices (keep only last 7 days)
-    _rotate_old_prices(db)
 
     session = requests.Session()
     session.headers.update({
@@ -170,10 +169,31 @@ def main():
     carrefour_items = fetch_carrefour_feeds(session, db, max_stores=5)
     total_items += carrefour_items
 
+    # Prune entries older than 7 days AFTER fresh ingest -- a failed download
+    # must never wipe existing prices.
+    _rotate_old_prices(db)
+
+    # Refresh query planner stats for the updated DB.
+    try:
+        import sqlite3
+        conn = sqlite3.connect(str(db.db_path), isolation_level=None)
+        conn.execute("PRAGMA busy_timeout=30000")
+        conn.execute("ANALYZE")
+        conn.close()
+    except sqlite3.Error as exc:
+        logger.warning("ANALYZE failed (non-fatal): %s", exc)
 
     size_mb = db.get_db_size_bytes() / (1024 * 1024)
     logger.info("Price update complete. Total items: %d, DB size: %.1f MB", total_items, size_mb)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Refresh the local supermarket price DB.")
+    parser.add_argument(
+        "--db",
+        type=Path,
+        default=None,
+        help="Price DB path (default: ./data/prices.sqlite3)",
+    )
+    args = parser.parse_args()
+    main(db_path=args.db)

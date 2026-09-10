@@ -9,6 +9,7 @@ from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from src.config.settings import DEFAULT_CHP_BASE_URL, DEFAULT_CITY, DEFAULT_CITY_ID, DEFAULT_STREET_ID
 
@@ -83,7 +84,14 @@ class CHPClient:
             }
         )
 
-        adapter = HTTPAdapter(max_retries=retries)
+        adapter = HTTPAdapter(
+            max_retries=Retry(
+                total=retries,
+                backoff_factor=0.5,
+                status_forcelist=[429, 500, 502, 503, 504],
+                allowed_methods={"GET"},
+            )
+        )
         self.session.mount("http://", adapter)
         self.session.mount("https://", adapter)
 

@@ -938,7 +938,7 @@ class TelegramPollingBot:
                 return
             action_type, choice = entry
             if action_type == "price_pick":
-                text = f"\u05de\u05d7\u05d9\u05e8 {choice.item_name}: \u20aa{choice.price:.2f} (\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc)\n\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9"  # noqa: E501
+                text = f"\u05de\u05d7\u05d9\u05e8 {choice.item_name}: \u20aa{choice.price:.2f}{f' ({choice.chain})' if getattr(choice, 'chain', '') else ''}\n\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9"  # noqa: E501
                 self._answer_callback(callback_id, f"\u20aa{choice.price:.2f}")
                 self._edit_message(chat_id, message_id, text)
             return

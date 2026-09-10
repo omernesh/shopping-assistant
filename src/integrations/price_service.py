@@ -45,6 +45,7 @@ class ProductChoice:
     item_code: str
     price: float
     manufacturer: str
+    chain: str = ""
 
 
 @dataclass
@@ -161,7 +162,7 @@ class PriceService:
             return None
 
         # Only include chains that have prices for at least 50% of items
-        min_items = max(1, (len(items) - missing) // 2)
+        min_items = max(1, (len(items) - missing + 1) // 2)  # ceil(50% of priced)
         qualified_chains = {k: v for k, v in chain_totals.items() if chain_item_counts.get(k, 0) >= min_items}
 
         if not qualified_chains:
@@ -213,6 +214,7 @@ class PriceService:
                         item_code=pp.get("item_code", ""),
                         price=pp["price"],
                         manufacturer=pp.get("manufacturer", ""),
+                        chain=PriceService._chain_id_to_name(pp.get("chain", "unknown")),
                     )
                     for pp in products
                 ]
@@ -284,6 +286,7 @@ class PriceService:
             if key in raw_chain or raw_chain in key:
                 return display
         return raw_chain
+
     @staticmethod
     def _chain_id_to_name(chain_id: str) -> str:
         names = {
@@ -293,6 +296,8 @@ class PriceService:
             "victory": "\u05d5\u05d9\u05e7\u05d8\u05d5\u05e8\u05d9",
             "osher-ad": "\u05d0\u05d5\u05e9\u05e8 \u05e2\u05d3",
             "mega": "\u05de\u05d2\u05d4",
+            "tivtaam": "\u05d8\u05d9\u05d1 \u05d8\u05e2\u05dd",
+            "carrefour": "\u05e7\u05e8\u05e4\u05d5\u05e8",
             "tiv-taam": "\u05d8\u05d9\u05d1 \u05d8\u05e2\u05dd",
         }
         return names.get(chain_id, chain_id)
