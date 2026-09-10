@@ -61,49 +61,49 @@ class TTLDict:
 logger = logging.getLogger(__name__)
 
 BOT_COMMANDS = [
-    {"command": "list", "description": "\u05d4\u05e6\u05d2 \u05d0\u05ea \u05e8\u05e9\u05d9\u05de\u05ea \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea"},
-    {"command": "clear", "description": "\u05e0\u05e7\u05d4 \u05d0\u05ea \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d4"},
-    {"command": "help", "description": "\u05de\u05d4 \u05d0\u05e0\u05d9 \u05d9\u05db\u05d5\u05dc \u05dc\u05e2\u05e9\u05d5\u05ea?"},
-    {"command": "city", "description": "\u05e9\u05e0\u05d4 \u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05de\u05d7\u05d3\u05dc"},
-    {"command": "shop", "description": "\u05d4\u05e4\u05e2\u05dc/\u05db\u05d1\u05d4 \u05de\u05e6\u05d1 \u05e7\u05e0\u05d9\u05d5\u05ea"},
-    {"command": "lists", "description": "\u05d4\u05e6\u05d2 \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d5\u05ea"},
-    {"command": "history", "description": "\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05e8\u05d5\u05df"},
+    {"command": "list", "description": "\u05d4\u05e6\u05d2 \u05d0\u05ea \u05e8\u05e9\u05d9\u05de\u05ea \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea"},  # noqa: E501
+    {"command": "clear", "description": "\u05e0\u05e7\u05d4 \u05d0\u05ea \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d4"},  # noqa: E501
+    {"command": "help", "description": "\u05de\u05d4 \u05d0\u05e0\u05d9 \u05d9\u05db\u05d5\u05dc \u05dc\u05e2\u05e9\u05d5\u05ea?"},  # noqa: E501
+    {"command": "city", "description": "\u05e9\u05e0\u05d4 \u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05de\u05d7\u05d3\u05dc"},  # noqa: E501
+    {"command": "shop", "description": "\u05d4\u05e4\u05e2\u05dc/\u05db\u05d1\u05d4 \u05de\u05e6\u05d1 \u05e7\u05e0\u05d9\u05d5\u05ea"},  # noqa: E501
+    {"command": "lists", "description": "\u05d4\u05e6\u05d2 \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d5\u05ea"},  # noqa: E501
+    {"command": "history", "description": "\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05e8\u05d5\u05df"},  # noqa: E501
 ]
 
 HELP_TEXT = (
-    "\u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05e7\u05e0\u05d9\u05d5\u05ea \u05dc\u05e7\u05d1\u05d5\u05e6\u05d4 \u05d4\u05d6\u05d5. \u05db\u05db\u05d4 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd \u05d0\u05d9\u05ea\u05d9:\n\n"
-    "\u05e9\u05dc\u05d7\u05d5 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05e0\u05d9 \u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"
-    "\u05db\u05de\u05d5\u05ea? \u05db\u05ea\u05d1\u05d5 \u05de\u05e1\u05e4\u05e8 \u05dc\u05e4\u05e0\u05d9: 2 \u05d7\u05dc\u05d1\n\n"
+    "\u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05e7\u05e0\u05d9\u05d5\u05ea \u05dc\u05e7\u05d1\u05d5\u05e6\u05d4 \u05d4\u05d6\u05d5. \u05db\u05db\u05d4 \u05e2\u05d5\u05d1\u05d3\u05d9\u05dd \u05d0\u05d9\u05ea\u05d9:\n\n"  # noqa: E501
+    "\u05e9\u05dc\u05d7\u05d5 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05e0\u05d9 \u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"  # noqa: E501
+    "\u05db\u05de\u05d5\u05ea? \u05db\u05ea\u05d1\u05d5 \u05de\u05e1\u05e4\u05e8 \u05dc\u05e4\u05e0\u05d9: 2 \u05d7\u05dc\u05d1\n\n"  # noqa: E501
     "\u05e4\u05e7\u05d5\u05d3\u05d5\u05ea:\n"
     "/list \u2014 \u05d4\u05e6\u05d2\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n"
     "/clear \u2014 \u05e0\u05d9\u05e7\u05d5\u05d9 \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n"
-    "/city <\u05e2\u05d9\u05e8> \u2014 \u05e9\u05d9\u05e0\u05d5\u05d9 \u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05de\u05d7\u05d3\u05dc\n"
+    "/city <\u05e2\u05d9\u05e8> \u2014 \u05e9\u05d9\u05e0\u05d5\u05d9 \u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05de\u05d7\u05d3\u05dc\n"  # noqa: E501
     "/help \u2014 \u05d4\u05e2\u05d6\u05e8\u05d4 \u05d4\u05d6\u05d5\n\n"
-    "/shop \u2014 \u05de\u05e6\u05d1 \u05e7\u05e0\u05d9\u05d5\u05ea (\u05db\u05dc \u05de\u05d5\u05e6\u05e8 \u05d9\u05e1\u05d5\u05de\u05df \u05db\u05e0\u05e7\u05e0\u05d4)\n"
-    "/lists \u2014 \u05d4\u05e6\u05d2\u05ea \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d5\u05ea + \u05de\u05e2\u05d1\u05e8 \u05d1\u05d9\u05e0\u05d9\u05d4\u05df\n"
-    "/history \u2014 \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05e8\u05d5\u05df\n\n"
+    "/shop \u2014 \u05de\u05e6\u05d1 \u05e7\u05e0\u05d9\u05d5\u05ea (\u05db\u05dc \u05de\u05d5\u05e6\u05e8 \u05d9\u05e1\u05d5\u05de\u05df \u05db\u05e0\u05e7\u05e0\u05d4)\n"  # noqa: E501
+    "/lists \u2014 \u05d4\u05e6\u05d2\u05ea \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d5\u05ea + \u05de\u05e2\u05d1\u05e8 \u05d1\u05d9\u05e0\u05d9\u05d4\u05df\n"  # noqa: E501
+    "/history \u2014 \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05e8\u05d5\u05df\n\n"  # noqa: E501
     "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05dd \u05d1\u05e9\u05e4\u05d4 \u05d8\u05d1\u05e2\u05d9\u05ea:\n"
-    '"\u05e7\u05e0\u05d9\u05ea\u05d9 \u05d7\u05dc\u05d1" \u2014 \u05e1\u05d9\u05de\u05d5\u05df \u05db\u05e0\u05e7\u05e0\u05d4\n'
-    '"\u05de\u05d7\u05e7 \u05dc\u05d7\u05dd" \u2014 \u05de\u05d7\u05d9\u05e7\u05d4 \u05de\u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n'
-    '"\u05de\u05d4 \u05d9\u05e9 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4" \u2014 \u05d4\u05e6\u05d2\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n'
-    '"\u05de\u05d7\u05d9\u05e8 \u05d7\u05dc\u05d1" \u2014 \u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05d7\u05d9\u05e8\n\n'
+    '"\u05e7\u05e0\u05d9\u05ea\u05d9 \u05d7\u05dc\u05d1" \u2014 \u05e1\u05d9\u05de\u05d5\u05df \u05db\u05e0\u05e7\u05e0\u05d4\n'  # noqa: E501
+    '"\u05de\u05d7\u05e7 \u05dc\u05d7\u05dd" \u2014 \u05de\u05d7\u05d9\u05e7\u05d4 \u05de\u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n'  # noqa: E501
+    '"\u05de\u05d4 \u05d9\u05e9 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4" \u2014 \u05d4\u05e6\u05d2\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n'  # noqa: E501
+    '"\u05de\u05d7\u05d9\u05e8 \u05d7\u05dc\u05d1" \u2014 \u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05d7\u05d9\u05e8\n\n'  # noqa: E501
     "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05dd \u05dc\u05e9\u05dc\u05d5\u05d7:\n"
-    "\u05d4\u05d5\u05d3\u05e2\u05d4 \u05e7\u05d5\u05dc\u05d9\u05ea \u2014 \u05d0\u05ea\u05de\u05dc\u05dc \u05d5\u05d0\u05d8\u05e4\u05dc \u05d1\u05d1\u05e7\u05e9\u05d4\n"
-    "\u05ea\u05de\u05d5\u05e0\u05d4 \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u2014 \u05d0\u05d6\u05d4\u05d4 \u05d5\u05d0\u05d5\u05e1\u05d9\u05e3 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4\n\n"
-    "\u05ea\u05de\u05d5\u05e0\u05ea \u05e7\u05d1\u05dc\u05d4 \u2014 \u05e1\u05e8\u05d5\u05e7 \u05d5\u05d0\u05d6\u05d4\u05d4 \u05de\u05d4 \u05e7\u05e0\u05d9\u05ea\u05dd"
+    "\u05d4\u05d5\u05d3\u05e2\u05d4 \u05e7\u05d5\u05dc\u05d9\u05ea \u2014 \u05d0\u05ea\u05de\u05dc\u05dc \u05d5\u05d0\u05d8\u05e4\u05dc \u05d1\u05d1\u05e7\u05e9\u05d4\n"  # noqa: E501
+    "\u05ea\u05de\u05d5\u05e0\u05d4 \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u2014 \u05d0\u05d6\u05d4\u05d4 \u05d5\u05d0\u05d5\u05e1\u05d9\u05e3 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4\n\n"  # noqa: E501
+    "\u05ea\u05de\u05d5\u05e0\u05ea \u05e7\u05d1\u05dc\u05d4 \u2014 \u05e1\u05e8\u05d5\u05e7 \u05d5\u05d0\u05d6\u05d4\u05d4 \u05de\u05d4 \u05e7\u05e0\u05d9\u05ea\u05dd"  # noqa: E501
 )
 
 START_TEXT = (
-    "\u05e9\u05dc\u05d5\u05dd! \u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea \u05e9\u05dc \u05d4\u05e7\u05d1\u05d5\u05e6\u05d4.\n"
-    "\u05e9\u05dc\u05d7\u05d5 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05e0\u05d9 \u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"
-    "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05dd \u05d4\u05d5\u05d3\u05e2\u05d5\u05ea \u05e7\u05d5\u05dc\u05d9\u05d5\u05ea \u05d5\u05ea\u05de\u05d5\u05e0\u05d5\u05ea!\n"
+    "\u05e9\u05dc\u05d5\u05dd! \u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea \u05e9\u05dc \u05d4\u05e7\u05d1\u05d5\u05e6\u05d4.\n"  # noqa: E501
+    "\u05e9\u05dc\u05d7\u05d5 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05e0\u05d9 \u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"  # noqa: E501
+    "\u05d0\u05e4\u05e9\u05e8 \u05d2\u05dd \u05d4\u05d5\u05d3\u05e2\u05d5\u05ea \u05e7\u05d5\u05dc\u05d9\u05d5\u05ea \u05d5\u05ea\u05de\u05d5\u05e0\u05d5\u05ea!\n"  # noqa: E501
     "\u05dc\u05e2\u05d6\u05e8\u05d4: /help"
 )
 
 WELCOME_TEXT = (
-    "\u05e9\u05dc\u05d5\u05dd! \u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea \u05e9\u05dc\u05db\u05dd.\n"
-    "\u05e9\u05dc\u05d7\u05d5 \u05dc\u05d9 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"
-    "/help \u2014 \u05e2\u05d6\u05e8\u05d4 \u05d5\u05e8\u05e9\u05d9\u05de\u05ea \u05e4\u05e7\u05d5\u05d3\u05d5\u05ea\n"
+    "\u05e9\u05dc\u05d5\u05dd! \u05d0\u05e0\u05d9 \u05e2\u05d5\u05d6\u05e8 \u05d4\u05e7\u05e0\u05d9\u05d5\u05ea \u05e9\u05dc\u05db\u05dd.\n"  # noqa: E501
+    "\u05e9\u05dc\u05d7\u05d5 \u05dc\u05d9 \u05e9\u05dd \u05e9\u05dc \u05de\u05d5\u05e6\u05e8 \u05d5\u05d0\u05d5\u05e1\u05d9\u05e3 \u05d0\u05d5\u05ea\u05d5 \u05dc\u05e8\u05e9\u05d9\u05de\u05d4.\n"  # noqa: E501
+    "/help \u2014 \u05e2\u05d6\u05e8\u05d4 \u05d5\u05e8\u05e9\u05d9\u05de\u05ea \u05e4\u05e7\u05d5\u05d3\u05d5\u05ea\n"  # noqa: E501
     "/list \u2014 \u05d4\u05e6\u05d2\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4\n"
     "/lists \u2014 \u05db\u05dc \u05d4\u05e8\u05e9\u05d9\u05de\u05d5\u05ea"
 )
@@ -134,7 +134,11 @@ def _fuzzy_match(list_name: str, receipt_name: str) -> bool:
     """
     list_words = set(list_name.split())
     receipt_words = set(receipt_name.split())
-    shorter, longer = (list_words, receipt_words) if len(list_words) <= len(receipt_words) else (receipt_words, list_words)
+    shorter, longer = (
+        (list_words, receipt_words)
+        if len(list_words) <= len(receipt_words)
+        else (receipt_words, list_words)
+    )
     significant_words = {w for w in shorter if len(w) > 2}
     if not significant_words:
         return list_name == receipt_name
@@ -142,7 +146,15 @@ def _fuzzy_match(list_name: str, receipt_name: str) -> bool:
 
 
 class TelegramPollingBot:
-    def __init__(self, token: str, agent: ShoppingAgent, timeout: int = 30, media_handler: Any = None, shopping_mode: ShoppingModeManager | None = None, super_admin_id: str = ""):
+    def __init__(
+        self,
+        token: str,
+        agent: ShoppingAgent,
+        timeout: int = 30,
+        media_handler: Any = None,
+        shopping_mode: ShoppingModeManager | None = None,
+        super_admin_id: str = "",
+    ):
         self.token = token
         self.agent = agent
         self.timeout = timeout
@@ -204,12 +216,22 @@ class TelegramPollingBot:
             except requests.RequestException as exc:
                 consecutive_failures += 1
                 backoff = _backoff_seconds(consecutive_failures)
-                logger.exception("Telegram polling failed (attempt %d, backoff %ds): %s", consecutive_failures, backoff, exc)
+                logger.exception(
+                    "Telegram polling failed (attempt %d, backoff %ds): %s",
+                    consecutive_failures,
+                    backoff,
+                    exc,
+                )
                 time.sleep(backoff)
             except Exception as exc:  # noqa: BLE001
                 consecutive_failures += 1
                 backoff = _backoff_seconds(consecutive_failures)
-                logger.exception("Unexpected polling failure (attempt %d, backoff %ds): %s", consecutive_failures, backoff, exc)
+                logger.exception(
+                    "Unexpected polling failure (attempt %d, backoff %ds): %s",
+                    consecutive_failures,
+                    backoff,
+                    exc,
+                )
                 time.sleep(backoff)
 
     def get_updates(self, offset: int | None = None) -> list[TelegramUpdate]:
@@ -226,7 +248,10 @@ class TelegramPollingBot:
         payload = response.json()
         if not payload.get("ok"):
             raise RuntimeError(f"Telegram getUpdates failed: {payload}")
-        return [TelegramUpdate(update_id=item["update_id"], payload=item) for item in payload.get("result", [])]
+        return [
+            TelegramUpdate(update_id=item["update_id"], payload=item)
+            for item in payload.get("result", [])
+        ]
 
     def handle_update(self, update: dict[str, Any]) -> None:
         # Handle callback queries (inline keyboard buttons)
@@ -286,7 +311,9 @@ class TelegramPollingBot:
         context = self.adapter.normalize_message(update).to_message_context()
 
         # Handle slash commands directly (no LLM round-trip)
-        slash_response = self._handle_slash_command(text, context, chat_key=chat_key, chat_id=chat_id, thread_id=thread_id)
+        slash_response = self._handle_slash_command(
+            text, context, chat_key=chat_key, chat_id=chat_id, thread_id=thread_id
+        )
         if slash_response is not None:
             if slash_response:
                 self.send_message(
@@ -341,7 +368,7 @@ class TelegramPollingBot:
         if not transcribed:
             self.send_message(
                 chat_id=chat_id,
-                text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05ea\u05de\u05dc\u05dc \u05d0\u05ea \u05d4\u05d4\u05d5\u05d3\u05e2\u05d4 \u05d4\u05e7\u05d5\u05dc\u05d9\u05ea",
+                text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05ea\u05de\u05dc\u05dc \u05d0\u05ea \u05d4\u05d4\u05d5\u05d3\u05e2\u05d4 \u05d4\u05e7\u05d5\u05dc\u05d9\u05ea",  # noqa: E501
                 message_thread_id=thread_id,
             )
             return
@@ -353,7 +380,9 @@ class TelegramPollingBot:
             transcribed = f"\u05e7\u05e0\u05d9\u05ea\u05d9 {transcribed}"
 
         # Build context with transcribed text
-        context = self.adapter.normalize_media_message(message, text_override=transcribed).to_message_context()
+        context = self.adapter.normalize_media_message(
+            message, text_override=transcribed
+        ).to_message_context()
         logger.info("Voice transcribed: %s", transcribed[:100])
 
         self._send_to_agent(context, message)
@@ -386,7 +415,7 @@ class TelegramPollingBot:
         if not result_text:
             self.send_message(
                 chat_id=chat_id,
-                text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d6\u05d4\u05d5\u05ea \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8 \u05d1\u05ea\u05de\u05d5\u05e0\u05d4",
+                text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d6\u05d4\u05d5\u05ea \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8 \u05d1\u05ea\u05de\u05d5\u05e0\u05d4",  # noqa: E501
                 message_thread_id=thread_id,
             )
             return
@@ -395,7 +424,7 @@ class TelegramPollingBot:
         if result_text.startswith("BARCODE:"):
             barcode = result_text[len("BARCODE:"):].strip()
             if not barcode:
-                self.send_message(chat_id=chat_id, text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05e7\u05e8\u05d5\u05d0 \u05d0\u05ea \u05d4\u05d1\u05e8\u05e7\u05d5\u05d3 \u2014 \u05e0\u05e1\u05d4 \u05dc\u05e6\u05dc\u05dd \u05e9\u05d5\u05d1", message_thread_id=thread_id)
+                self.send_message(chat_id=chat_id, text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05e7\u05e8\u05d5\u05d0 \u05d0\u05ea \u05d4\u05d1\u05e8\u05e7\u05d5\u05d3 \u2014 \u05e0\u05e1\u05d4 \u05dc\u05e6\u05dc\u05dd \u05e9\u05d5\u05d1", message_thread_id=thread_id)  # noqa: E501
                 return
             price_db = getattr(self.agent.router, "price_db", None)
             if price_db:
@@ -404,10 +433,10 @@ class TelegramPollingBot:
                     result_text = resolved
                     logger.info("Barcode %s resolved to: %s", barcode, resolved)
                 else:
-                    self.send_message(chat_id=chat_id, text=f"\u05dc\u05d0 \u05de\u05e6\u05d0\u05ea\u05d9 \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8 \u05d1\u05d1\u05e8\u05e7\u05d5\u05d3 {barcode}", message_thread_id=thread_id)
+                    self.send_message(chat_id=chat_id, text=f"\u05dc\u05d0 \u05de\u05e6\u05d0\u05ea\u05d9 \u05d0\u05ea \u05d4\u05de\u05d5\u05e6\u05e8 \u05d1\u05d1\u05e8\u05e7\u05d5\u05d3 {barcode}", message_thread_id=thread_id)  # noqa: E501
                     return
             else:
-                self.send_message(chat_id=chat_id, text=f"\u05d1\u05e8\u05e7\u05d5\u05d3: {barcode} (\u05d7\u05d9\u05e4\u05d5\u05e9 \u05d1\u05e8\u05e7\u05d5\u05d3 \u05dc\u05d0 \u05d6\u05de\u05d9\u05df)", message_thread_id=thread_id)
+                self.send_message(chat_id=chat_id, text=f"\u05d1\u05e8\u05e7\u05d5\u05d3: {barcode} (\u05d7\u05d9\u05e4\u05d5\u05e9 \u05d1\u05e8\u05e7\u05d5\u05d3 \u05dc\u05d0 \u05d6\u05de\u05d9\u05df)", message_thread_id=thread_id)  # noqa: E501
                 return
 
         # Shopping mode: rewrite as purchase
@@ -416,7 +445,9 @@ class TelegramPollingBot:
             result_text = f"\u05e7\u05e0\u05d9\u05ea\u05d9 {result_text}"
 
         # Build context with identified product text
-        context = self.adapter.normalize_media_message(message, text_override=result_text).to_message_context()
+        context = self.adapter.normalize_media_message(
+            message, text_override=result_text
+        ).to_message_context()
         logger.info("Photo identified: %s", result_text[:100])
 
         self._send_to_agent(context, message)
@@ -433,19 +464,19 @@ class TelegramPollingBot:
 
     def _handle_receipt_photo(self, message: dict, file_id: str, chat_id: int, thread_id: int | None) -> None:
         """Handle a receipt photo: parse items, match against active list, report."""
-        self.send_message(chat_id=chat_id, text="\u05e1\u05d5\u05e8\u05e7 \u05e7\u05d1\u05dc\u05d4...", message_thread_id=thread_id)
+        self.send_message(chat_id=chat_id, text="\u05e1\u05d5\u05e8\u05e7 \u05e7\u05d1\u05dc\u05d4...", message_thread_id=thread_id)  # noqa: E501
 
         # Download photo
         image_bytes = self.media_handler.download_photo(file_id)
         if not image_bytes:
-            self.send_message(chat_id=chat_id, text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d4\u05d5\u05e8\u05d9\u05d3 \u05d0\u05ea \u05d4\u05ea\u05de\u05d5\u05e0\u05d4", message_thread_id=thread_id)
+            self.send_message(chat_id=chat_id, text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05d4\u05d5\u05e8\u05d9\u05d3 \u05d0\u05ea \u05d4\u05ea\u05de\u05d5\u05e0\u05d4", message_thread_id=thread_id)  # noqa: E501
             return
 
         # Issue #5: Image size limit
         if len(image_bytes) > IMAGE_MAX_BYTES:
             self.send_message(
                 chat_id=chat_id,
-                text="\u05d4\u05ea\u05de\u05d5\u05e0\u05d4 \u05d2\u05d3\u05d5\u05dc\u05d4 \u05de\u05d3\u05d9, \u05e0\u05e1\u05d4 \u05dc\u05e9\u05dc\u05d5\u05d7 \u05ea\u05de\u05d5\u05e0\u05d4 \u05e7\u05d8\u05e0\u05d4 \u05d9\u05d5\u05ea\u05e8",
+                text="\u05d4\u05ea\u05de\u05d5\u05e0\u05d4 \u05d2\u05d3\u05d5\u05dc\u05d4 \u05de\u05d3\u05d9, \u05e0\u05e1\u05d4 \u05dc\u05e9\u05dc\u05d5\u05d7 \u05ea\u05de\u05d5\u05e0\u05d4 \u05e7\u05d8\u05e0\u05d4 \u05d9\u05d5\u05ea\u05e8",  # noqa: E501
                 message_thread_id=thread_id,
             )
             return
@@ -453,7 +484,7 @@ class TelegramPollingBot:
         # Parse receipt via Gemini
         receipt_items = self.media_handler.parse_receipt(image_bytes)
         if not receipt_items:
-            self.send_message(chat_id=chat_id, text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05e7\u05e8\u05d5\u05d0 \u05d0\u05ea \u05d4\u05e7\u05d1\u05dc\u05d4", message_thread_id=thread_id)
+            self.send_message(chat_id=chat_id, text="\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05e7\u05e8\u05d5\u05d0 \u05d0\u05ea \u05d4\u05e7\u05d1\u05dc\u05d4", message_thread_id=thread_id)  # noqa: E501
             return
 
         # Get store/chain info from first item
@@ -493,7 +524,7 @@ class TelegramPollingBot:
             active_items = store.list_active_items(shopping_list.id)
         except Exception as exc:
             logger.exception("Failed to load shopping list for receipt: %s", exc)
-            self.send_message(chat_id=chat_id, text="\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d8\u05e2\u05d9\u05e0\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4, \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1", message_thread_id=thread_id)
+            self.send_message(chat_id=chat_id, text="\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d8\u05e2\u05d9\u05e0\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4, \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1", message_thread_id=thread_id)  # noqa: E501
             return
 
         matched = []
@@ -530,7 +561,11 @@ class TelegramPollingBot:
                             purchased_by_name=user_name,
                         )
                     except Exception as exc:
-                        logger.warning("update_item_purchase failed for item %s, falling back: %s", found.id, exc)
+                        logger.warning(
+                            "update_item_purchase failed for item %s, falling back: %s",
+                            found.id,
+                            exc,
+                        )
                         store.update_item_status(
                             list_id=shopping_list.id,
                             query=found.normalized_name,
@@ -570,7 +605,7 @@ class TelegramPollingBot:
         elif chain_name:
             header += f" \u2014 {chain_name}"
         lines.append(header)
-        lines.append(f'{len(receipt_items)} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd, \u05e1\u05d4"\u05db \u20aa{total_receipt:.2f}')
+        lines.append(f'{len(receipt_items)} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd, \u05e1\u05d4"\u05db \u20aa{total_receipt:.2f}')  # noqa: E501
         lines.append("")
 
         if matched:
@@ -586,7 +621,7 @@ class TelegramPollingBot:
 
         if remaining:
             lines.append("")
-            lines.append(f"\u05e0\u05d5\u05ea\u05e8\u05d5 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4 ({len(remaining)}):")
+            lines.append(f"\u05e0\u05d5\u05ea\u05e8\u05d5 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4 ({len(remaining)}):")  # noqa: E501
             for item in remaining:
                 qty_str = ""
                 if item.quantity_value:
@@ -642,7 +677,9 @@ class TelegramPollingBot:
             message_thread_id=thread_id,
         )
 
-    def _handle_slash_command(self, text: str, context: Any, chat_key: str, chat_id: int = 0, thread_id: int | None = None) -> str | None:
+    def _handle_slash_command(
+        self, text: str, context: Any, chat_key: str, chat_id: int = 0, thread_id: int | None = None
+    ) -> str | None:
         if not text.startswith("/"):
             return None
 
@@ -659,7 +696,7 @@ class TelegramPollingBot:
         elif command == "/city":
             if not args:
                 city = self.agent.router.get_default_city(context)
-                return f"\u05d4\u05e2\u05d9\u05e8 \u05d4\u05e0\u05d5\u05db\u05d7\u05d9\u05ea: {city}\n\u05dc\u05e9\u05d9\u05e0\u05d5\u05d9: /city <\u05e9\u05dd \u05e2\u05d9\u05e8>"
+                return f"\u05d4\u05e2\u05d9\u05e8 \u05d4\u05e0\u05d5\u05db\u05d7\u05d9\u05ea: {city}\n\u05dc\u05e9\u05d9\u05e0\u05d5\u05d9: /city <\u05e9\u05dd \u05e2\u05d9\u05e8>"  # noqa: E501
             return self.agent.router.handle_semantic_action(context, action="city", city=args)
         elif command == "/shop":
             if self.shopping_mode.toggle(chat_key):
@@ -695,7 +732,7 @@ class TelegramPollingBot:
             ).fetchall()
 
         if not rows:
-            self.send_message(chat_id=chat_id, text="\u05d0\u05d9\u05df \u05e8\u05e9\u05d9\u05de\u05d5\u05ea \u05e2\u05d3\u05d9\u05d9\u05df", message_thread_id=thread_id)
+            self.send_message(chat_id=chat_id, text="\u05d0\u05d9\u05df \u05e8\u05e9\u05d9\u05de\u05d5\u05ea \u05e2\u05d3\u05d9\u05d9\u05df", message_thread_id=thread_id)  # noqa: E501
             return
 
         # Get active list to show current selection
@@ -712,7 +749,7 @@ class TelegramPollingBot:
             label = f"{marker}{list_name} ({item_count})"
             buttons.append([{"text": label, "callback_data": f"switch_list:{list_id}"}])
 
-        text = "\u05d4\u05e8\u05e9\u05d9\u05de\u05d5\u05ea \u05e9\u05dc\u05da \u2014 \u05dc\u05d7\u05e5 \u05dc\u05de\u05e2\u05d1\u05e8:"
+        text = "\u05d4\u05e8\u05e9\u05d9\u05de\u05d5\u05ea \u05e9\u05dc\u05da \u2014 \u05dc\u05d7\u05e5 \u05dc\u05de\u05e2\u05d1\u05e8:"  # noqa: E501
         payload: dict[str, Any] = {
             "chat_id": chat_id,
             "text": text,
@@ -757,9 +794,9 @@ class TelegramPollingBot:
             ).fetchall()
 
         if not rows:
-            return "\u05d0\u05d9\u05df \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d1\u05d7\u05d5\u05d3\u05e9 \u05d4\u05d0\u05d7\u05e8\u05d5\u05df"
+            return "\u05d0\u05d9\u05df \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d1\u05d7\u05d5\u05d3\u05e9 \u05d4\u05d0\u05d7\u05e8\u05d5\u05df"  # noqa: E501
 
-        lines = ["\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea (30 \u05d9\u05d5\u05dd \u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd):"]
+        lines = ["\u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea (30 \u05d9\u05d5\u05dd \u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd):"]  # noqa: E501
         lines.append("")
         current_date = None
         for row in rows:
@@ -802,15 +839,15 @@ class TelegramPollingBot:
         buttons: list[list[dict]] = []
         # Always show merge option
         if nq and eq:
-            buttons.append([{"text": f'\u05d0\u05d7\u05d3 (\u05e1\u05d4"\u05db {merged_display})', "callback_data": f"dup:merge:{conflict_id}"}])
+            buttons.append([{"text": f'\u05d0\u05d7\u05d3 (\u05e1\u05d4"\u05db {merged_display})', "callback_data": f"dup:merge:{conflict_id}"}])  # noqa: E501
         elif nq:
-            buttons.append([{"text": f"\u05d0\u05d7\u05d3 ({new_display})", "callback_data": f"dup:merge:{conflict_id}"}])
+            buttons.append([{"text": f"\u05d0\u05d7\u05d3 ({new_display})", "callback_data": f"dup:merge:{conflict_id}"}])  # noqa: E501
         else:
             buttons.append([{"text": "\u05d0\u05d7\u05d3", "callback_data": f"dup:merge:{conflict_id}"}])
 
         if nq:
-            buttons.append([{"text": f"\u05e2\u05d3\u05db\u05df \u05dc-{new_display}", "callback_data": f"dup:update:{conflict_id}"}])
-        buttons.append([{"text": "\u05d4\u05d5\u05e1\u05e3 \u05d1\u05e0\u05e4\u05e8\u05d3", "callback_data": f"dup:add:{conflict_id}"}])
+            buttons.append([{"text": f"\u05e2\u05d3\u05db\u05df \u05dc-{new_display}", "callback_data": f"dup:update:{conflict_id}"}])  # noqa: E501
+        buttons.append([{"text": "\u05d4\u05d5\u05e1\u05e3 \u05d1\u05e0\u05e4\u05e8\u05d3", "callback_data": f"dup:add:{conflict_id}"}])  # noqa: E501
         buttons.append([{"text": "\u05d1\u05d8\u05dc", "callback_data": f"dup:cancel:{conflict_id}"}])
 
         payload: dict[str, Any] = {
@@ -830,7 +867,9 @@ class TelegramPollingBot:
             self.send_message(chat_id=payload["chat_id"], text=payload["text"],
                               message_thread_id=payload.get("message_thread_id"))
 
-    def _send_price_picker(self, chat_id: int, text: str, choices, query: str, message_thread_id: int | None = None) -> None:
+    def _send_price_picker(
+        self, chat_id: int, text: str, choices, query: str, message_thread_id: int | None = None
+    ) -> None:
         """Send inline keyboard with product choices for price disambiguation."""
         buttons = []
         for choice in choices[:6]:
@@ -862,7 +901,7 @@ class TelegramPollingBot:
             self._process_callback(callback)
         except Exception as exc:
             logger.exception("Callback handling failed: %s", exc)
-            self._answer_callback(callback_id, "\u05e9\u05d2\u05d9\u05d0\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")
+            self._answer_callback(callback_id, "\u05e9\u05d2\u05d9\u05d0\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")  # noqa: E501
 
     def _process_callback(self, callback: dict[str, Any]) -> None:
         callback_id = callback["id"]
@@ -895,17 +934,17 @@ class TelegramPollingBot:
             picker_id = data.split(":", 1)[1]
             entry = self.pending_conflicts.pop(picker_id, None)
             if entry is None:
-                self._answer_callback(callback_id, "\u05d4\u05d1\u05d7\u05d9\u05e8\u05d4 \u05e4\u05d2\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")
+                self._answer_callback(callback_id, "\u05d4\u05d1\u05d7\u05d9\u05e8\u05d4 \u05e4\u05d2\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")  # noqa: E501
                 return
             action_type, choice = entry
             if action_type == "price_pick":
-                text = f"\u05de\u05d7\u05d9\u05e8 {choice.item_name}: \u20aa{choice.price:.2f} (\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc)\n\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9"
+                text = f"\u05de\u05d7\u05d9\u05e8 {choice.item_name}: \u20aa{choice.price:.2f} (\u05e9\u05d5\u05e4\u05e8\u05e1\u05dc)\n\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9"  # noqa: E501
                 self._answer_callback(callback_id, f"\u20aa{choice.price:.2f}")
                 self._edit_message(chat_id, message_id, text)
             return
 
         if not data.startswith("dup:"):
-            self._answer_callback(callback_id, "\u05e4\u05e2\u05d5\u05dc\u05d4 \u05dc\u05d0 \u05de\u05d5\u05db\u05e8\u05ea")
+            self._answer_callback(callback_id, "\u05e4\u05e2\u05d5\u05dc\u05d4 \u05dc\u05d0 \u05de\u05d5\u05db\u05e8\u05ea")  # noqa: E501
             return
 
         parts = data.split(":", 2)
@@ -918,8 +957,8 @@ class TelegramPollingBot:
 
         conflict = self.pending_conflicts.pop(conflict_id, None)
         if conflict is None:
-            self._answer_callback(callback_id, "\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05e4\u05d2\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")
-            self._edit_message(chat_id, message_id, message.get("text", "") + "\n\n(\u05e4\u05d2 \u05ea\u05d5\u05e7\u05e3)")
+            self._answer_callback(callback_id, "\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05e4\u05d2\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")  # noqa: E501
+            self._edit_message(chat_id, message_id, message.get("text", "") + "\n\n(\u05e4\u05d2 \u05ea\u05d5\u05e7\u05e3)")  # noqa: E501
             return
 
         # Build a fake context for the router (Issue #8: use helper)
@@ -951,7 +990,7 @@ class TelegramPollingBot:
                 note=conflict.new_note or "",
             )
         elif action == "cancel":
-            response_text = "\u05d1\u05d5\u05d8\u05dc \u2014 \u05d4\u05e4\u05e8\u05d9\u05d8 \u05dc\u05d0 \u05e0\u05d5\u05e1\u05e3"
+            response_text = "\u05d1\u05d5\u05d8\u05dc \u2014 \u05d4\u05e4\u05e8\u05d9\u05d8 \u05dc\u05d0 \u05e0\u05d5\u05e1\u05e3"  # noqa: E501
 
         # Answer the callback (removes loading spinner)
         self._answer_callback(callback_id, response_text[:200])
@@ -960,7 +999,15 @@ class TelegramPollingBot:
         original_text = message.get("text", "")
         self._edit_message(chat_id, message_id, original_text + f"\n\n\u2705 {response_text}")
 
-    def _handle_switch_list(self, callback_id: str, chat_id: int, message_id: int, thread_id: int | None, list_id: int, user_id: str) -> None:
+    def _handle_switch_list(
+        self,
+        callback_id: str,
+        chat_id: int,
+        message_id: int,
+        thread_id: int | None,
+        list_id: int,
+        user_id: str,
+    ) -> None:
         """Handle switch_list:{list_id} callback -- Issue #2: uses list_id instead of name."""
         from src.app.router import MessageContext
         context = MessageContext(
@@ -985,7 +1032,7 @@ class TelegramPollingBot:
             ).fetchone()
 
         if not row:
-            self._answer_callback(callback_id, "\u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d4")
+            self._answer_callback(callback_id, "\u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d4")  # noqa: E501
             return
 
         list_name = row["name"]
@@ -996,7 +1043,7 @@ class TelegramPollingBot:
         items = store.list_active_items(shopping_list.id)
 
         item_count = len(items)
-        self._answer_callback(callback_id, f"\u05e8\u05e9\u05d9\u05de\u05ea {list_name} ({item_count} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd)")
+        self._answer_callback(callback_id, f"\u05e8\u05e9\u05d9\u05de\u05ea {list_name} ({item_count} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd)")  # noqa: E501
 
         # Show the list contents
         if items:
@@ -1023,7 +1070,7 @@ class TelegramPollingBot:
         # Look up stored payload
         move_data = self.pending_conflicts.pop(move_id, None)
         if move_data is None:
-            self._answer_callback(callback_id, "\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05e4\u05d2\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")
+            self._answer_callback(callback_id, "\u05d4\u05e4\u05e2\u05d5\u05dc\u05d4 \u05e4\u05d2\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1")  # noqa: E501
             return
 
         target_list_name = move_data["target_list"]
@@ -1075,7 +1122,7 @@ class TelegramPollingBot:
                     moved += 1
                     break
 
-        response_text = f"\u05e0\u05d5\u05e6\u05e8\u05d4 \u05e8\u05e9\u05d9\u05de\u05ea {target_list_name} \u05d5\u05d4\u05d5\u05e2\u05d1\u05e8\u05d5 {moved} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd"
+        response_text = f"\u05e0\u05d5\u05e6\u05e8\u05d4 \u05e8\u05e9\u05d9\u05de\u05ea {target_list_name} \u05d5\u05d4\u05d5\u05e2\u05d1\u05e8\u05d5 {moved} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd"  # noqa: E501
         self._answer_callback(callback_id, response_text[:200])
 
         original_text = message.get("text", "")
@@ -1139,7 +1186,11 @@ class TelegramPollingBot:
     def send_message(self, chat_id: int, text: str, message_thread_id: int | None = None) -> None:
         # Telegram max message length is 4096 characters
         MAX_LEN = 4096
-        chunks = [text[i:i + MAX_LEN] for i in range(0, len(text), MAX_LEN)] if len(text) > MAX_LEN else [text]
+        chunks = (
+            [text[i:i + MAX_LEN] for i in range(0, len(text), MAX_LEN)]
+            if len(text) > MAX_LEN
+            else [text]
+        )
 
         for chunk in chunks:
             payload: dict[str, Any] = {

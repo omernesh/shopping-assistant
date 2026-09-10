@@ -5,7 +5,7 @@ from src.config.settings import Settings, _load_dotenv, load_settings
 
 def test_load_dotenv_sets_missing_values(tmp_path: Path, monkeypatch) -> None:
     env_path = tmp_path / ".env"
-    env_path.write_text("SHOPPING_BOT_TOKEN=test-token\nSHOPPING_ASSISTANT_DEFAULT_CITY=חיפה\n", encoding="utf-8")
+    env_path.write_text("SHOPPING_BOT_TOKEN=test-token\nSHOPPING_ASSISTANT_DEFAULT_CITY=חיפה\n", encoding="utf-8")  # noqa: E501
     monkeypatch.delenv("SHOPPING_BOT_TOKEN", raising=False)
     monkeypatch.delenv("SHOPPING_ASSISTANT_DEFAULT_CITY", raising=False)
 

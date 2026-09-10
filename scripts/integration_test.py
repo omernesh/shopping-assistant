@@ -58,7 +58,7 @@ def setup():
     return agent, router, store
 
 
-def ctx(text: str, user_id: str = "user1", user_name: str = "דני", chat_id: str = "testchat1") -> MessageContext:
+def ctx(text: str, user_id: str = "user1", user_name: str = "דני", chat_id: str = "testchat1") -> MessageContext:  # noqa: E501
     """Create a message context."""
     return MessageContext(
         platform="telegram",
@@ -94,7 +94,10 @@ def test(agent, label: str, message: str, user_id="user1", user_name="דני", c
 
         if conflict:
             print("\n[DUPLICATE DETECTED]")
-            print(f"  Existing: {conflict.existing_item.normalized_name} (qty: {conflict.existing_item.quantity_value})")
+            print(
+                f"  Existing: {conflict.existing_item.normalized_name} "
+                f"(qty: {conflict.existing_item.quantity_value})"
+            )
             print(f"  New: {conflict.new_item_name} (qty: {conflict.new_quantity})")
         return True
     except Exception as e:

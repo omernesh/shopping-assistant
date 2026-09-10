@@ -174,7 +174,7 @@ SCHEMA_STATEMENTS: tuple[str, ...] = (
     """CREATE INDEX IF NOT EXISTS idx_list_items_purchased_at ON list_items(purchased_at)""",
     """CREATE INDEX IF NOT EXISTS idx_purchase_history_chat ON purchase_history(chat_id)""",
     """CREATE INDEX IF NOT EXISTS idx_purchase_history_completed ON purchase_history(completed_at)""",
-    """CREATE INDEX IF NOT EXISTS idx_purchase_history_items_history ON purchase_history_items(purchase_history_id)""",
+    """CREATE INDEX IF NOT EXISTS idx_purchase_history_items_history ON purchase_history_items(purchase_history_id)""",  # noqa: E501 - SQL DDL literal; splitting harms readability
     """CREATE INDEX IF NOT EXISTS idx_chats_active_list ON chats(active_list_id)""",
 )
 

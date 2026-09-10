@@ -43,7 +43,7 @@ def test_agent_tool_call_add_item(tmp_path) -> None:
     # Round 2: LLM responds with text confirmation
     transport = StubTransport([
         LLMResponse(
-            tool_calls=[ToolCall(id="call_1", name="add_item", input={"item_name": "קולה זירו", "quantity": 2})],
+            tool_calls=[ToolCall(id="call_1", name="add_item", input={"item_name": "קולה זירו", "quantity": 2})],  # noqa: E501
             stop_reason="tool_use",
         ),
         LLMResponse(text="נוסף קולה זירו", stop_reason="end_turn"),

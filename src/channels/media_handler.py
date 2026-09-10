@@ -154,7 +154,11 @@ class MediaHandler:
                     return None
 
             if not completed:
-                logger.error("Soniox transcription timed out after %ds (id=%s)", SONIOX_MAX_WAIT, transcription_id)
+                logger.error(
+                    "Soniox transcription timed out after %ds (id=%s)",
+                    SONIOX_MAX_WAIT,
+                    transcription_id,
+                )
                 return None
 
             # Step 4: Get transcript

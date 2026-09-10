@@ -156,7 +156,12 @@ def main():
             logger.warning("No feed files found for %s", chain_key)
             continue
 
-        logger.info("Found %d feed files for %s, downloading up to %d", len(urls), chain_key, MAX_FILES_PER_CHAIN)
+        logger.info(
+            "Found %d feed files for %s, downloading up to %d",
+            len(urls),
+            chain_key,
+            MAX_FILES_PER_CHAIN,
+        )
         for url in urls[:MAX_FILES_PER_CHAIN]:
             count = download_and_ingest(url, chain_key, db, session)
             total_items += count

@@ -42,7 +42,13 @@ def main() -> None:
                 _conn.execute("ANALYZE")
         except sqlite3.Error as exc:
             logging.warning("ANALYZE failed for %s: %s (non-fatal)", _db_path, exc)
-    router = ShoppingAssistantRouter(store=store, default_city=settings.default_city, chp_client=chp_client, price_db=price_db, price_service=price_service)
+    router = ShoppingAssistantRouter(
+        store=store,
+        default_city=settings.default_city,
+        chp_client=chp_client,
+        price_db=price_db,
+        price_service=price_service,
+    )
     price_db.rotate_if_needed(max_bytes=MAX_DB_SIZE_BYTES)
     price_db_size = price_db.get_db_size_bytes()
     store_db_size = store.get_db_size_bytes()

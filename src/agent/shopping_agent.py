@@ -17,7 +17,12 @@ MAX_TOOL_ROUNDS = 5
 
 
 class ShoppingAgent:
-    def __init__(self, router: ShoppingAssistantRouter, transport: LLMTransport | None = None, super_admin_id: str = ""):
+    def __init__(
+        self,
+        router: ShoppingAssistantRouter,
+        transport: LLMTransport | None = None,
+        super_admin_id: str = "",
+    ):
         self.router = router
         self.transport = transport
         self.pending_conflicts: OrderedDict[str, DuplicateConflict] = OrderedDict()
@@ -111,7 +116,7 @@ class ShoppingAgent:
 
         # If we exhaust rounds, log and return a user-facing message
         logger.warning("Tool loop exhausted %d rounds for message: %s", MAX_TOOL_ROUNDS, context.text[:100])
-        return response.text.strip() if response.text else "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05e2\u05d1\u05d3 \u05d0\u05ea \u05d4\u05d1\u05e7\u05e9\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1"
+        return response.text.strip() if response.text else "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05e2\u05d1\u05d3 \u05d0\u05ea \u05d4\u05d1\u05e7\u05e9\u05d4 \u2014 \u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1"  # noqa: E501
 
     def _get_chat_id(self, context: MessageContext) -> int:
         """Resolve the internal chat_id for multi-list operations."""
@@ -161,9 +166,9 @@ class ShoppingAgent:
                     eq = existing.quantity_value
                     eq_display = _fmt_qty(eq) if eq else eq
                     return (
-                        f"\u05e0\u05de\u05e6\u05d0 \u05e4\u05e8\u05d9\u05d8 \u05d3\u05d5\u05de\u05d4 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4: {existing.normalized_name}"
+                        f"\u05e0\u05de\u05e6\u05d0 \u05e4\u05e8\u05d9\u05d8 \u05d3\u05d5\u05de\u05d4 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4: {existing.normalized_name}"  # noqa: E501
                         + (f" ({eq_display})" if eq_display else "")
-                        + ". \u05de\u05d7\u05db\u05d4 \u05dc\u05d1\u05d7\u05d9\u05e8\u05ea \u05d4\u05de\u05e9\u05ea\u05de\u05e9."
+                        + ". \u05de\u05d7\u05db\u05d4 \u05dc\u05d1\u05d7\u05d9\u05e8\u05ea \u05d4\u05de\u05e9\u05ea\u05de\u05e9."  # noqa: E501
                     )
                 return result
 

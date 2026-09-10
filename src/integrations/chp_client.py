@@ -186,14 +186,14 @@ class CHPClient:
         if is_online:
             section_pattern = r'תוצאות מחנויות באינטרנט.*?רשת.*?שם.*?אתר.*?מבצע.*?מחיר(.*?)(?:</table|$)'
         else:
-            section_pattern = r'מחירים בקרבת.*?רשת.*?כתובת.*?מבצע.*?מחיר(.*?)(?:תוצאות מחנויות באינטרנט|מחירים בקרבת|$)'
+            section_pattern = r'מחירים בקרבת.*?רשת.*?כתובת.*?מבצע.*?מחיר(.*?)(?:תוצאות מחנויות באינטרנט|מחירים בקרבת|$)'  # noqa: E501
 
         section_match = re.search(section_pattern, html, re.DOTALL)
         if not section_match:
             return []
 
         section_html = section_match.group(1)
-        row_pattern = r'<td[^>]*>([^<]*)</td>\s*<td[^>]*>([^<]*)</td>\s*<td[^>]*>([^<]*)</td>\s*<td[^>]*>([^<]*)</td>\s*<td[^>]*>([\d.]+)</td>'
+        row_pattern = r'<td[^>]*>([^<]*)</td>\s*<td[^>]*>([^<]*)</td>\s*<td[^>]*>([^<]*)</td>\s*<td[^>]*>([^<]*)</td>\s*<td[^>]*>([\d.]+)</td>'  # noqa: E501 - single regex literal; splitting harms readability/correctness
 
         stores: list[StorePrice] = []
         for match in re.findall(row_pattern, section_html):

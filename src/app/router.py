@@ -60,7 +60,7 @@ class DuplicateConflict:
 
 
 class ShoppingAssistantRouter:
-    def __init__(self, store: SQLiteStore, default_city: str = "\u05d9\u05d1\u05e0\u05d4", chp_client: CHPClient | None = None, price_db: PriceDB | None = None, price_service: PriceService | None = None):
+    def __init__(self, store: SQLiteStore, default_city: str = "\u05d9\u05d1\u05e0\u05d4", chp_client: CHPClient | None = None, price_db: PriceDB | None = None, price_service: PriceService | None = None):  # noqa: E501
         self.store = store
         self.default_city = default_city
         self.chp_client = chp_client
@@ -105,10 +105,12 @@ class ShoppingAssistantRouter:
         chat, _ = self._ensure_chat_and_list(context)
         return chat.default_city or self.default_city
 
-    def price_lookup_with_disambiguation(self, context: MessageContext, *, item_name: str) -> PriceLookupResult:
+    def price_lookup_with_disambiguation(
+        self, context: MessageContext, *, item_name: str
+    ) -> PriceLookupResult:
         """Price lookup that may return disambiguation choices."""
         if not self.price_service:
-            return PriceLookupResult(text="\u05e9\u05d9\u05e8\u05d5\u05ea \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05db\u05e8\u05d2\u05e2")
+            return PriceLookupResult(text="\u05e9\u05d9\u05e8\u05d5\u05ea \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05db\u05e8\u05d2\u05e2")  # noqa: E501
         chat, _ = self._ensure_chat_and_list(context)
         city = chat.default_city or self.default_city
         return self.price_service.price_lookup_with_disambiguation(item_name, city=city)
@@ -140,18 +142,27 @@ class ShoppingAssistantRouter:
         if action == "done":
             return self._handle_parsed_message(context, ParsedMessage(intent="done", value=item_name.strip()))
         if action == "delete":
-            return self._handle_parsed_message(context, ParsedMessage(intent="delete", value=item_name.strip()))
+            return self._handle_parsed_message(
+                context, ParsedMessage(intent="delete", value=item_name.strip())
+            )
         if action == "city":
             return self._handle_parsed_message(context, ParsedMessage(intent="city", value=city.strip()))
         if action == "price":
-            return self._handle_parsed_message(context, ParsedMessage(intent="price", value=item_name.strip()))
+            return self._handle_parsed_message(
+                context, ParsedMessage(intent="price", value=item_name.strip())
+            )
         if action == "clear":
             chat, shopping_list = self._ensure_chat_and_list(context)
             count = self.store.clear_active_items(list_id=shopping_list.id, acting_user_id=context.user_id)
             if count == 0:
                 return "\u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \u05db\u05d1\u05e8 \u05e8\u05d9\u05e7\u05d4"
-            self.store.record_event(chat_id=chat.id, user_id=context.user_id, event_type="list_cleared", payload={"count": count})
-            return f"\u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \u05e0\u05d5\u05e7\u05ea\u05d4 ({count} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05e0\u05de\u05d7\u05e7\u05d5)"
+            self.store.record_event(
+                chat_id=chat.id,
+                user_id=context.user_id,
+                event_type="list_cleared",
+                payload={"count": count},
+            )
+            return f"\u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \u05e0\u05d5\u05e7\u05ea\u05d4 ({count} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05e0\u05de\u05d7\u05e7\u05d5)"  # noqa: E501
         if action == "ignore":
             return ""
         return self.handle_message(context)
@@ -250,7 +261,7 @@ class ShoppingAssistantRouter:
         """Merge quantity into existing item."""
         item = self.store.merge_item_quantity(item_id=item_id, additional_quantity=additional_quantity)
         if item is None:
-            return "\u05d4\u05e4\u05e8\u05d9\u05d8 \u05db\u05d1\u05e8 \u05dc\u05d0 \u05e7\u05d9\u05d9\u05dd \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"
+            return "\u05d4\u05e4\u05e8\u05d9\u05d8 \u05db\u05d1\u05e8 \u05dc\u05d0 \u05e7\u05d9\u05d9\u05dd \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"  # noqa: E501
         q = _fmt_qty(item.quantity_value)
         return f"\u05de\u05d5\u05d6\u05d2: {item.normalized_name} (\u05e1\u05d4\"\u05db {q})"
 
@@ -258,11 +269,13 @@ class ShoppingAssistantRouter:
         """Update existing item's quantity."""
         item = self.store.update_item_quantity(item_id=item_id, new_quantity=new_quantity)
         if item is None:
-            return "\u05d4\u05e4\u05e8\u05d9\u05d8 \u05db\u05d1\u05e8 \u05dc\u05d0 \u05e7\u05d9\u05d9\u05dd \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"
+            return "\u05d4\u05e4\u05e8\u05d9\u05d8 \u05db\u05d1\u05e8 \u05dc\u05d0 \u05e7\u05d9\u05d9\u05dd \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"  # noqa: E501
         q = _fmt_qty(item.quantity_value)
         return f"\u05e2\u05d5\u05d3\u05db\u05df: {item.normalized_name} (\u05db\u05de\u05d5\u05ea: {q})"
 
-    def force_add_item(self, context: MessageContext, *, item_name: str, quantity: float | None = None, note: str = "") -> str:
+    def force_add_item(
+        self, context: MessageContext, *, item_name: str, quantity: float | None = None, note: str = ""
+    ) -> str:
         """Add item without duplicate check (user chose 'add separately')."""
         return self.handle_semantic_action(
             context, action="add", item_name=item_name, quantity=quantity, note=note,
@@ -271,7 +284,7 @@ class ShoppingAssistantRouter:
     def estimate_list_cost(self, context: MessageContext) -> str:
         """Estimate total cost of the current shopping list."""
         if not self.price_service:
-            return "\u05e9\u05d9\u05e8\u05d5\u05ea \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05db\u05e8\u05d2\u05e2"
+            return "\u05e9\u05d9\u05e8\u05d5\u05ea \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05db\u05e8\u05d2\u05e2"  # noqa: E501
 
         chat, shopping_list = self._ensure_chat_and_list(context)
         items = self.store.list_active_items(list_id=shopping_list.id)
@@ -285,12 +298,12 @@ class ShoppingAssistantRouter:
             return format_list_estimate(estimate)
         except Exception as exc:
             logger.warning("List cost estimation failed: %s", exc)
-            return "\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d4\u05e2\u05e8\u05db\u05ea \u05e2\u05dc\u05d5\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4"
+            return "\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d4\u05e2\u05e8\u05db\u05ea \u05e2\u05dc\u05d5\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4"  # noqa: E501
 
     def compare_list_by_chain(self, context: MessageContext) -> str:
         """Compare total list cost across chains."""
         if not self.price_service:
-            return "\u05e9\u05d9\u05e8\u05d5\u05ea \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05db\u05e8\u05d2\u05e2"
+            return "\u05e9\u05d9\u05e8\u05d5\u05ea \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05db\u05e8\u05d2\u05e2"  # noqa: E501
 
         chat, shopping_list = self._ensure_chat_and_list(context)
         items = self.store.list_active_items(list_id=shopping_list.id)
@@ -302,11 +315,11 @@ class ShoppingAssistantRouter:
         try:
             comparison = self.price_service.compare_list_by_chain(item_tuples, city=city)
             if not comparison:
-                return "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05de\u05e6\u05d5\u05d0 \u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d4\u05e9\u05d5\u05d5\u05d0\u05d4"
+                return "\u05dc\u05d0 \u05d4\u05e6\u05dc\u05d7\u05ea\u05d9 \u05dc\u05de\u05e6\u05d5\u05d0 \u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d4\u05e9\u05d5\u05d5\u05d0\u05d4"  # noqa: E501
             return format_chain_comparison(comparison)
         except Exception as exc:
             logger.warning("Chain comparison failed: %s", exc)
-            return "\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d4\u05e9\u05d5\u05d5\u05d0\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd"
+            return "\u05e9\u05d2\u05d9\u05d0\u05d4 \u05d1\u05d4\u05e9\u05d5\u05d5\u05d0\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd"  # noqa: E501
 
     def list_items_by_user_name(self, context: MessageContext, *, user_name: str) -> str:
         """List items added by a specific user (searched by display name)."""
@@ -317,7 +330,7 @@ class ShoppingAssistantRouter:
             chat_id=chat.id,
         )
         if not items:
-            return f"\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d5 \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05e9\u05dc {user_name} \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"
+            return f"\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d5 \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05e9\u05dc {user_name} \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"  # noqa: E501
 
         lines = [f"\u05d4\u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05e9\u05dc {user_name}:"]
         for item in items:
@@ -340,7 +353,7 @@ class ShoppingAssistantRouter:
             name = lst["name"]
             count = lst["pending_count"]
             if lst["is_working_list"]:
-                lines.append(f"\u2705 {name} ({count} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd) \u2014 \u05e4\u05e2\u05d9\u05dc\u05d4")
+                lines.append(f"\u2705 {name} ({count} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd) \u2014 \u05e4\u05e2\u05d9\u05dc\u05d4")  # noqa: E501
             else:
                 lines.append(f"\U0001f4dd {name} ({count} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd)")
         return "\n".join(lines)
@@ -349,7 +362,7 @@ class ShoppingAssistantRouter:
         """Switch the active list for this chat. Creates the list if it doesn't exist."""
         list_name = list_name.strip()
         if not list_name:
-            return "\u05e6\u05e8\u05d9\u05da \u05dc\u05e6\u05d9\u05d9\u05df \u05e9\u05dd \u05e8\u05e9\u05d9\u05de\u05d4"
+            return "\u05e6\u05e8\u05d9\u05da \u05dc\u05e6\u05d9\u05d9\u05df \u05e9\u05dd \u05e8\u05e9\u05d9\u05de\u05d4"  # noqa: E501
         if not self.store.list_exists(chat_id=chat_id, name=list_name):
             self.store.create_list(chat_id=chat_id, name=list_name)
         sl = self.store.ensure_active_list(chat_id=chat_id, name=list_name)
@@ -360,16 +373,16 @@ class ShoppingAssistantRouter:
         """Create a new list for this chat."""
         list_name = list_name.strip()
         if not list_name:
-            return "\u05e6\u05e8\u05d9\u05da \u05dc\u05e6\u05d9\u05d9\u05df \u05e9\u05dd \u05e8\u05e9\u05d9\u05de\u05d4"
+            return "\u05e6\u05e8\u05d9\u05da \u05dc\u05e6\u05d9\u05d9\u05df \u05e9\u05dd \u05e8\u05e9\u05d9\u05de\u05d4"  # noqa: E501
         self.store.create_list(chat_id=chat_id, name=list_name)
-        return f"\u05e8\u05e9\u05d9\u05de\u05d4 \u05d7\u05d3\u05e9\u05d4 \u05e0\u05d5\u05e6\u05e8\u05d4: {list_name}"
+        return f"\u05e8\u05e9\u05d9\u05de\u05d4 \u05d7\u05d3\u05e9\u05d4 \u05e0\u05d5\u05e6\u05e8\u05d4: {list_name}"  # noqa: E501
 
     def move_items(self, chat_id: int, item_names: list[str], target_list_name: str) -> str:
         """Move items from the active list to a target list."""
         target_list_name = target_list_name.strip()
 
         if not self.store.list_exists(chat_id=chat_id, name=target_list_name):
-            return f"\u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \"{target_list_name}\" \u05dc\u05d0 \u05e7\u05d9\u05d9\u05de\u05ea. \u05e8\u05d5\u05e6\u05d4 \u05e9\u05d0\u05e6\u05d5\u05e8 \u05d0\u05d5\u05ea\u05d4?"
+            return f"\u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \"{target_list_name}\" \u05dc\u05d0 \u05e7\u05d9\u05d9\u05de\u05ea. \u05e8\u05d5\u05e6\u05d4 \u05e9\u05d0\u05e6\u05d5\u05e8 \u05d0\u05d5\u05ea\u05d4?"  # noqa: E501
 
         target_list = self.store.ensure_active_list(chat_id=chat_id, name=target_list_name)
         source_list_id = self.store.get_active_list_id(chat_id)
@@ -381,8 +394,8 @@ class ShoppingAssistantRouter:
         )
 
         if moved:
-            return f"\u05d4\u05d5\u05e2\u05d1\u05e8\u05d5 {moved} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05dc-{target_list_name}"
-        return "\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d5 \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05dc\u05d4\u05e2\u05d1\u05e8\u05d4"
+            return f"\u05d4\u05d5\u05e2\u05d1\u05e8\u05d5 {moved} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05dc-{target_list_name}"  # noqa: E501
+        return "\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d5 \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05dc\u05d4\u05e2\u05d1\u05e8\u05d4"  # noqa: E501
 
     def complete_list(
         self,
@@ -394,7 +407,7 @@ class ShoppingAssistantRouter:
         """Complete a list: mark pending as bought, snapshot to purchase_history, return summary."""
         if list_name:
             if not self.store.list_exists(chat_id=chat_id, name=list_name):
-                return f"\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d4 \u05e8\u05e9\u05d9\u05de\u05d4: {list_name}"
+                return f"\u05dc\u05d0 \u05e0\u05de\u05e6\u05d0\u05d4 \u05e8\u05e9\u05d9\u05de\u05d4: {list_name}"  # noqa: E501
             sl = self.store.ensure_active_list(chat_id=chat_id, name=list_name)
             list_id = sl.id
             target_name = list_name
@@ -425,7 +438,7 @@ class ShoppingAssistantRouter:
 
         # Format summary
         estimated_total = sum(item.estimated_price or 0 for item in pending_items)
-        lines = [f"\u2705 \u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \"{target_name}\" \u05d4\u05d5\u05e9\u05dc\u05de\u05d4!"]
+        lines = [f"\u2705 \u05d4\u05e8\u05e9\u05d9\u05de\u05d4 \"{target_name}\" \u05d4\u05d5\u05e9\u05dc\u05de\u05d4!"]  # noqa: E501
         lines.append(f"   {len(pending_items)} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd")
         if estimated_total > 0:
             lines.append(f"   \u05d4\u05e2\u05e8\u05db\u05d4: \u20aa{estimated_total:.0f}")
@@ -437,11 +450,11 @@ class ShoppingAssistantRouter:
         records = self.store.get_purchase_history(chat_id, months_back)
 
         if not records:
-            period = "\u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05d3" if months_back == 1 else f"{months_back} \u05d7\u05d5\u05d3\u05e9\u05d9\u05dd"
-            return f"\u05d0\u05d9\u05df \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d1-{period} \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd"
+            period = "\u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05d3" if months_back == 1 else f"{months_back} \u05d7\u05d5\u05d3\u05e9\u05d9\u05dd"  # noqa: E501
+            return f"\u05d0\u05d9\u05df \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u05d1-{period} \u05d4\u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd"  # noqa: E501
 
-        period_label = "\u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05d3" if months_back == 1 else f"{months_back} \u05d7\u05d5\u05d3\u05e9\u05d9\u05dd \u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd"
-        lines = [f"\U0001f4ca \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u2014 {period_label}:"]
+        period_label = "\u05d7\u05d5\u05d3\u05e9 \u05d0\u05d7\u05d3" if months_back == 1 else f"{months_back} \u05d7\u05d5\u05d3\u05e9\u05d9\u05dd \u05d0\u05d7\u05e8\u05d5\u05e0\u05d9\u05dd"  # noqa: E501
+        lines = [f"\U0001f4ca \u05d4\u05d9\u05e1\u05d8\u05d5\u05e8\u05d9\u05d9\u05ea \u05e7\u05e0\u05d9\u05d5\u05ea \u2014 {period_label}:"]  # noqa: E501
 
         grand_total = 0.0
         for r in records:
@@ -497,7 +510,7 @@ class ShoppingAssistantRouter:
             acting_user_id=context.user_id,
         )
         if item is None:
-            return f"\u05e7\u05e0\u05d9\u05ea\u05d9 {item_name} \u2014 \u05dc\u05d0 \u05d4\u05d9\u05d4 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"
+            return f"\u05e7\u05e0\u05d9\u05ea\u05d9 {item_name} \u2014 \u05dc\u05d0 \u05d4\u05d9\u05d4 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4"  # noqa: E501
 
         self.store.record_event(
             chat_id=chat.id, user_id=context.user_id,
@@ -546,7 +559,9 @@ class ShoppingAssistantRouter:
     # Internal -- message handling
     # ------------------------------------------------------------------
 
-    def _handle_parsed_message(self, context: MessageContext, parsed: ParsedMessage, note: str | None = None) -> str:
+    def _handle_parsed_message(
+        self, context: MessageContext, parsed: ParsedMessage, note: str | None = None
+    ) -> str:
         chat, shopping_list = self._ensure_chat_and_list(context)
 
         if parsed.intent == "ignore":
@@ -566,16 +581,23 @@ class ShoppingAssistantRouter:
                 acting_user_id=context.user_id,
             )
             if item is None:
-                return f"\u05dc\u05d0 \u05de\u05e6\u05d0\u05ea\u05d9 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4: {parsed.value}"
-            self.store.record_event(chat_id=chat.id, user_id=context.user_id, event_type="item_deleted", payload={"item_id": item.id})
+                return f"\u05dc\u05d0 \u05de\u05e6\u05d0\u05ea\u05d9 \u05d1\u05e8\u05e9\u05d9\u05de\u05d4: {parsed.value}"  # noqa: E501
+            self.store.record_event(
+                chat_id=chat.id,
+                user_id=context.user_id,
+                event_type="item_deleted",
+                payload={"item_id": item.id},
+            )
             return f"\u05e0\u05de\u05d7\u05e7: {item.normalized_name}"
 
         if parsed.intent == "help":
-            return "\u05e4\u05e7\u05d5\u05d3\u05d5\u05ea: ?, \u05ea\u05e8\u05d0\u05d4, \u05e7\u05e0\u05d9\u05ea\u05d9 <\u05e4\u05e8\u05d9\u05d8>, \u05de\u05d7\u05e7 <\u05e4\u05e8\u05d9\u05d8>, \u05de\u05d7\u05d9\u05e8 <\u05e4\u05e8\u05d9\u05d8>"
+            return "\u05e4\u05e7\u05d5\u05d3\u05d5\u05ea: ?, \u05ea\u05e8\u05d0\u05d4, \u05e7\u05e0\u05d9\u05ea\u05d9 <\u05e4\u05e8\u05d9\u05d8>, \u05de\u05d7\u05e7 <\u05e4\u05e8\u05d9\u05d8>, \u05de\u05d7\u05d9\u05e8 <\u05e4\u05e8\u05d9\u05d8>"  # noqa: E501
 
         if parsed.intent == "price":
             if self.price_service:
-                result = self.price_service.price_lookup_with_disambiguation(parsed.value, city=chat.default_city or self.default_city)
+                result = self.price_service.price_lookup_with_disambiguation(
+                    parsed.value, city=chat.default_city or self.default_city
+                )
                 return result.text
             if self.price_db:
                 try:
@@ -592,11 +614,13 @@ class ShoppingAssistantRouter:
                         return format_price_summary(result, limit=5)
                 except Exception as exc:
                     logger.exception("CHP price lookup failed: %s", exc)
-            return f"\u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05e0\u05d4 \u05db\u05e8\u05d2\u05e2 \u05e2\u05d1\u05d5\u05e8 {parsed.value}"
+            return f"\u05d1\u05d3\u05d9\u05e7\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05e0\u05d4 \u05db\u05e8\u05d2\u05e2 \u05e2\u05d1\u05d5\u05e8 {parsed.value}"  # noqa: E501
 
         if parsed.intent == "city":
-            self.store.update_chat_default_city(chat_id=chat.id, default_city=parsed.value or self.default_city)
-            return f"\u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05d4\u05de\u05d7\u05d3\u05dc \u05e2\u05d5\u05d3\u05db\u05e0\u05d4 \u05dc-{parsed.value or self.default_city}"
+            self.store.update_chat_default_city(
+                chat_id=chat.id, default_city=parsed.value or self.default_city
+            )
+            return f"\u05e2\u05d9\u05e8 \u05d1\u05e8\u05d9\u05e8\u05ea \u05d4\u05de\u05d7\u05d3\u05dc \u05e2\u05d5\u05d3\u05db\u05e0\u05d4 \u05dc-{parsed.value or self.default_city}"  # noqa: E501
 
         # Default: add item
         return self._add_item_internal(
@@ -649,7 +673,7 @@ class ShoppingAssistantRouter:
 
         if has_prices:
             lines.append("")
-            lines.append(f"\U0001f4b0 \u05e1\u05d4\"\u05db \u05de\u05e9\u05d5\u05e2\u05e8: \u20aa{total_estimated:.2f}")
+            lines.append(f"\U0001f4b0 \u05e1\u05d4\"\u05db \u05de\u05e9\u05d5\u05e2\u05e8: \u20aa{total_estimated:.2f}")  # noqa: E501
         return "\n".join(lines)
 
     def _format_item(self, item: StoredItem) -> str:

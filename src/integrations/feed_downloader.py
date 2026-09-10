@@ -308,7 +308,7 @@ def format_feed_results(results: list[dict], query: str, limit: int = 5) -> str:
             pct = (spread / sorted_results[0]["price"]) * 100
             lines.append(f"\u05e4\u05e2\u05e8: {pct:.0f}%")
 
-    lines.append("\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9 (\u05d7\u05d5\u05e7 \u05e9\u05e7\u05d9\u05e4\u05d5\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd)")
+    lines.append("\u05de\u05e7\u05d5\u05e8: \u05e4\u05d9\u05d3 \u05e8\u05e9\u05de\u05d9 (\u05d7\u05d5\u05e7 \u05e9\u05e7\u05d9\u05e4\u05d5\u05ea \u05de\u05d7\u05d9\u05e8\u05d9\u05dd)")  # noqa: E501
     return "\n".join(lines)
 
 

@@ -63,7 +63,7 @@ class PriceService:
         self.chp_client = chp_client
         self.price_db = price_db
 
-    def lookup_item_prices(self, item_name: str, quantity: float = 1, city: str = "\u05d9\u05d1\u05e0\u05d4") -> ItemPrice:
+    def lookup_item_prices(self, item_name: str, quantity: float = 1, city: str = "\u05d9\u05d1\u05e0\u05d4") -> ItemPrice:  # noqa: E501
         """Look up prices for a single item across chains."""
         result = ItemPrice(item_name=item_name, quantity=quantity)
 
@@ -76,7 +76,10 @@ class PriceService:
                         name = store.chain or store.store_name or "unknown"
                         chain_name = PriceService._normalize_chain_name(name)
                         price = store.price
-                        if price and (chain_name not in result.chain_prices or price < result.chain_prices[chain_name]):
+                        if price and (
+                            chain_name not in result.chain_prices
+                            or price < result.chain_prices[chain_name]
+                        ):
                             result.chain_prices[chain_name] = price
 
                     if result.chain_prices:
@@ -97,7 +100,10 @@ class PriceService:
                         chain = row.get("chain", "unknown")
                         chain_display = PriceService._chain_id_to_name(chain)
                         price = row["price"]
-                        if chain_display not in result.chain_prices or price < result.chain_prices[chain_display]:
+                        if (
+                            chain_display not in result.chain_prices
+                            or price < result.chain_prices[chain_display]
+                        ):
                             result.chain_prices[chain_display] = price
 
                     if result.chain_prices:
@@ -111,7 +117,7 @@ class PriceService:
 
         return result
 
-    def estimate_list_cost(self, items: list[tuple[str, float]], city: str = "\u05d9\u05d1\u05e0\u05d4") -> ListEstimate:
+    def estimate_list_cost(self, items: list[tuple[str, float]], city: str = "\u05d9\u05d1\u05e0\u05d4") -> ListEstimate:  # noqa: E501
         """Estimate the total cost of a shopping list using best available prices."""
         priced_items = []
         total = 0.0
@@ -132,7 +138,7 @@ class PriceService:
             items_missing=missing,
         )
 
-    def compare_list_by_chain(self, items: list[tuple[str, float]], city: str = "\u05d9\u05d1\u05e0\u05d4") -> ChainComparison | None:
+    def compare_list_by_chain(self, items: list[tuple[str, float]], city: str = "\u05d9\u05d1\u05e0\u05d4") -> ChainComparison | None:  # noqa: E501
         """Compare the total list cost across different store chains."""
         all_item_prices = []
         missing = 0
@@ -234,7 +240,10 @@ class PriceService:
                     name = store.chain or store.store_name or "unknown"
                     chain_name = PriceService._normalize_chain_name(name)
                     price = store.price
-                    if price and (chain_name not in result.chain_prices or price < result.chain_prices[chain_name]):
+                    if price and (
+                        chain_name not in result.chain_prices
+                        or price < result.chain_prices[chain_name]
+                    ):
                         result.chain_prices[chain_name] = price
                 if result.chain_prices:
                     cheapest = min(result.chain_prices.items(), key=lambda x: x[1])
@@ -291,7 +300,7 @@ class PriceService:
 
 def format_list_estimate(estimate: ListEstimate) -> str:
     """Format a list cost estimate for chat display."""
-    lines = ["\u05d4\u05e2\u05e8\u05db\u05ea \u05e2\u05dc\u05d5\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4 (\u05de\u05d7\u05d9\u05e8 \u05d4\u05db\u05d9 \u05d6\u05d5\u05dc \u05dc\u05db\u05dc \u05e4\u05e8\u05d9\u05d8):\n"]
+    lines = ["\u05d4\u05e2\u05e8\u05db\u05ea \u05e2\u05dc\u05d5\u05ea \u05d4\u05e8\u05e9\u05d9\u05de\u05d4 (\u05de\u05d7\u05d9\u05e8 \u05d4\u05db\u05d9 \u05d6\u05d5\u05dc \u05dc\u05db\u05dc \u05e4\u05e8\u05d9\u05d8):\n"]  # noqa: E501
     for ip in estimate.items:
         q = int(ip.quantity) if ip.quantity == int(ip.quantity) else ip.quantity
         if ip.best_price is not None:
@@ -300,11 +309,11 @@ def format_list_estimate(estimate: ListEstimate) -> str:
             lines.append(f"\u2022 {name} x{q} \u2014 \u20aa{item_total:.2f} ({ip.best_store})")
         else:
             name = ip.resolved_name if ip.resolved_name else ip.item_name
-            lines.append(f"\u2022 {name} x{q} \u2014 \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0 \u05de\u05d7\u05d9\u05e8")
+            lines.append(f"\u2022 {name} x{q} \u2014 \u05dc\u05d0 \u05e0\u05de\u05e6\u05d0 \u05de\u05d7\u05d9\u05e8")  # noqa: E501
 
     lines.append(f"\n\u05e1\u05d4\"\u05db: \u20aa{estimate.total:.2f}")
     if estimate.items_missing > 0:
-        lines.append(f"({estimate.items_missing} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8)")
+        lines.append(f"({estimate.items_missing} \u05e4\u05e8\u05d9\u05d8\u05d9\u05dd \u05dc\u05dc\u05d0 \u05de\u05d7\u05d9\u05e8)")  # noqa: E501
     return "\n".join(lines)
 
 
@@ -316,7 +325,11 @@ def format_chain_comparison(comparison: ChainComparison) -> str:
         marker = " ⬅ הכי זול!" if chain == comparison.cheapest_chain else ""
         lines.append(f"{i}. {chain} — ₪{total:.2f}{marker}")
 
-    if comparison.cheapest_total and comparison.most_expensive_total and comparison.cheapest_chain != comparison.most_expensive_chain:
+    if (
+        comparison.cheapest_total
+        and comparison.most_expensive_total
+        and comparison.cheapest_chain != comparison.most_expensive_chain
+    ):
         savings = comparison.most_expensive_total - comparison.cheapest_total
         pct = (savings / comparison.most_expensive_total) * 100
         lines.append(f"\nחיסכון פוטנציאלי: ₪{savings:.2f} ({pct:.0f}%)")
