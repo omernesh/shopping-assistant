@@ -4,9 +4,9 @@ import json
 import logging
 import re
 import sqlite3
-from dataclasses import dataclass, field
+from collections.abc import Iterable
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 logger = logging.getLogger(__name__)
 
@@ -1010,10 +1010,7 @@ class SQLiteStore:
     ) -> dict:
         """Return total spent, item count, per-list breakdown for a month."""
         month_start = f"{year:04d}-{month:02d}-01"
-        if month == 12:
-            month_end = f"{year + 1:04d}-01-01"
-        else:
-            month_end = f"{year:04d}-{month + 1:02d}-01"
+        month_end = f"{year + 1:04d}-01-01" if month == 12 else f"{year:04d}-{month + 1:02d}-01"
 
         with self.connect() as conn:
             totals = conn.execute(

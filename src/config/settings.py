@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
-import os
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
@@ -58,8 +58,8 @@ def _env_int(key: str, default: int) -> int:
     val = os.getenv(key, str(default))
     try:
         return int(val)
-    except ValueError:
-        raise ValueError(f"Environment variable {key} must be an integer, got: {val!r}")
+    except ValueError as err:
+        raise ValueError(f"Environment variable {key} must be an integer, got: {val!r}") from err
 
 
 def _env_bool(name: str, default: bool) -> bool:

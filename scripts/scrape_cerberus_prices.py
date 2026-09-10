@@ -7,6 +7,7 @@ CSRF tokens, but we can extract file data directly from the rendered DOM.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import gzip
 import logging
 import re
@@ -19,7 +20,7 @@ from playwright.sync_api import sync_playwright
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.integrations.feed_downloader import PriceDB
+from src.integrations.feed_downloader import PriceDB  # noqa: E402  (import after sys.path setup)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -130,10 +131,8 @@ def scrape_chain(chain_name: str, config: dict, db: PriceDB, max_files: int = 3)
                     raw_bytes = bytes(raw_data)
 
                     # Decompress
-                    try:
+                    with contextlib.suppress(gzip.BadGzipFile):
                         raw_bytes = gzip.decompress(raw_bytes)
-                    except gzip.BadGzipFile:
-                        pass
 
                     # Ingest
                     count = db.ingest_xml(raw_bytes, chain=config["chain_id"], store_id=store_id)

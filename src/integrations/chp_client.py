@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, field
-from typing import Any
 import io
 import logging
 import re
 import sys
+from dataclasses import asdict, dataclass, field
+from typing import Any
 
 import requests
 from requests.adapters import HTTPAdapter

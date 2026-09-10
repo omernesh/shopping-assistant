@@ -1,4 +1,4 @@
-from src.integrations.chp_client import CHPClient, format_price_summary, PriceSearchResult, StorePrice
+from src.integrations.chp_client import CHPClient, PriceSearchResult, StorePrice, format_price_summary
 
 
 def test_resolve_city_id_defaults_when_unknown() -> None:

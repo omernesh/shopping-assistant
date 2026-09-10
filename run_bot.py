@@ -7,13 +7,13 @@ import threading
 from src.agent.llm_client import LLMConfig, LLMTransport
 from src.agent.shopping_agent import ShoppingAgent
 from src.app.router import ShoppingAssistantRouter
-from src.integrations.chp_client import CHPClient
-from src.channels.telegram_polling import TelegramPollingBot
 from src.channels.media_handler import MediaHandler
-from src.config.settings import load_settings, MAX_DB_SIZE_BYTES
-from src.storage.sqlite_store import SQLiteStore
+from src.channels.telegram_polling import TelegramPollingBot
+from src.config.settings import MAX_DB_SIZE_BYTES, load_settings
+from src.integrations.chp_client import CHPClient
 from src.integrations.feed_downloader import PriceDB
 from src.integrations.price_service import PriceService
+from src.storage.sqlite_store import SQLiteStore
 
 
 def main() -> None:

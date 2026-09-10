@@ -8,9 +8,8 @@ from typing import Any
 
 import requests
 
-from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMConfig, LLMResponse, LLMTransport, ToolCall
-
-from src.app.router import MessageContext, ShoppingAssistantRouter, DuplicateConflict
+from src.agent.llm_client import SYSTEM_PROMPT, TOOLS, LLMTransport, ToolCall
+from src.app.router import DuplicateConflict, MessageContext, ShoppingAssistantRouter
 
 logger = logging.getLogger(__name__)
 
@@ -42,9 +41,7 @@ class ShoppingAgent:
         if stripped.replace(".", "").replace(",", "").isdigit():
             return True
         # URLs
-        if stripped.startswith("http://") or stripped.startswith("https://"):
-            return True
-        return False
+        return stripped.startswith(("http://", "https://"))
 
     def handle_message(self, context: MessageContext) -> str:
         if self.transport is None:

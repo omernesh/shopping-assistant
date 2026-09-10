@@ -7,8 +7,8 @@ Designed to run as a cron job on HPG6.
 from __future__ import annotations
 
 import gzip
-import logging
 import json
+import logging
 import re
 import sys
 from pathlib import Path
@@ -19,7 +19,7 @@ import requests
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.integrations.feed_downloader import CHAIN_FEEDS, PriceDB
+from src.integrations.feed_downloader import CHAIN_FEEDS, PriceDB  # noqa: E402  (import after sys.path setup)
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 logger = logging.getLogger(__name__)

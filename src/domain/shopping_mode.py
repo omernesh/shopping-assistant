@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import time
 
-
 # Hebrew activation phrases
 ACTIVATION_PHRASES = ("אני בסופר", "מתחיל קניות", "מצב קניות")
 DEACTIVATION_PHRASES = ("סיימתי קניות", "סיום קניות")

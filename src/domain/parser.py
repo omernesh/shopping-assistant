@@ -63,9 +63,7 @@ def _should_ignore_as_item(text: str) -> bool:
         return True
     if stripped.endswith("?") and not stripped.startswith("מחיר "):
         return True
-    if len(stripped.split()) > 6:
-        return True
-    return False
+    return len(stripped.split()) > 6
 
 
 def parse_message(text: str) -> ParsedMessage:

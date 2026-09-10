@@ -1,18 +1,21 @@
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 
 from src.domain.parser import ParsedMessage, parse_message
 from src.domain.shopping_list import build_item
-from src.storage.sqlite_store import SQLiteStore, StoredItem
-
-import logging
 from src.integrations.chp_client import CHPClient, format_price_summary
 from src.integrations.feed_downloader import PriceDB, format_feed_results
-from src.integrations.price_service import PriceService, format_list_estimate, format_chain_comparison, PriceLookupResult
+from src.integrations.price_service import (
+    PriceLookupResult,
+    PriceService,
+    format_chain_comparison,
+    format_list_estimate,
+)
+from src.storage.sqlite_store import SQLiteStore, StoredItem
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +36,7 @@ class MessageContext:
     title: str | None = None
     user_name: str | None = None
 
-    def with_text(self, text: str) -> "MessageContext":
+    def with_text(self, text: str) -> MessageContext:
         return MessageContext(
             platform=self.platform,
             external_chat_id=self.external_chat_id,
@@ -102,7 +105,7 @@ class ShoppingAssistantRouter:
         chat, _ = self._ensure_chat_and_list(context)
         return chat.default_city or self.default_city
 
-    def price_lookup_with_disambiguation(self, context: MessageContext, *, item_name: str) -> "PriceLookupResult":
+    def price_lookup_with_disambiguation(self, context: MessageContext, *, item_name: str) -> PriceLookupResult:
         """Price lookup that may return disambiguation choices."""
         if not self.price_service:
             return PriceLookupResult(text="\u05e9\u05d9\u05e8\u05d5\u05ea \u05d4\u05de\u05d7\u05d9\u05e8\u05d9\u05dd \u05dc\u05d0 \u05d6\u05de\u05d9\u05df \u05db\u05e8\u05d2\u05e2")
@@ -414,7 +417,7 @@ class ShoppingAssistantRouter:
             )
 
         # Snapshot bought items via store
-        history_id = self.store.complete_list(
+        self.store.complete_list(
             list_id=list_id,
             completed_by_user_id=user_id,
             completed_by_name=user_name,

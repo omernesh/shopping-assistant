@@ -1,13 +1,10 @@
 """Download and parse Israeli supermarket XML price feeds into local price DB."""
 from __future__ import annotations
 
-import gzip
 import logging
 import sqlite3
 import xml.etree.ElementTree as ET
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 logger = logging.getLogger(__name__)
 

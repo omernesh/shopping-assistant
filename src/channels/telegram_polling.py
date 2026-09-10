@@ -9,7 +9,16 @@ from typing import Any
 
 import requests
 
+from src.agent.shopping_agent import ShoppingAgent
 from src.app.router import _fmt_qty
+from src.channels.telegram_bot import TelegramBotAdapter
+from src.domain.shopping_mode import (
+    ACTIVATE_MSG,
+    ACTIVATION_PHRASES,
+    DEACTIVATE_MSG,
+    DEACTIVATION_PHRASES,
+    ShoppingModeManager,
+)
 
 
 def _backoff_seconds(failures: int) -> float:
@@ -48,13 +57,6 @@ class TTLDict:
             oldest = min(self._data, key=lambda k: self._data[k][0])
             del self._data[oldest]
 
-
-from src.agent.shopping_agent import ShoppingAgent
-from src.channels.telegram_bot import TelegramBotAdapter
-from src.domain.shopping_mode import (
-    ShoppingModeManager, ACTIVATION_PHRASES, DEACTIVATION_PHRASES,
-    ACTIVATE_MSG, DEACTIVATE_MSG,
-)
 
 logger = logging.getLogger(__name__)
 
@@ -427,9 +429,7 @@ class TelegramPollingBot:
                 if kw in caption_lower:
                     return True
         # Issue #10: In shopping mode, photo without caption is also treated as receipt
-        if not caption and self.shopping_mode.is_active(chat_key):
-            return True
-        return False
+        return bool(not caption and self.shopping_mode.is_active(chat_key))
 
     def _handle_receipt_photo(self, message: dict, file_id: str, chat_id: int, thread_id: int | None) -> None:
         """Handle a receipt photo: parse items, match against active list, report."""
@@ -575,7 +575,7 @@ class TelegramPollingBot:
 
         if matched:
             lines.append(f"\u05e1\u05d5\u05de\u05e0\u05d5 \u05db\u05e0\u05e7\u05e0\u05d5 ({len(matched)}):")
-            for list_name, receipt_name, price in matched:
+            for list_name, _receipt_name, price in matched:
                 lines.append(f"  \u2705 {list_name} \u2014 \u20aa{price:.2f}")
 
         try:
@@ -833,7 +833,7 @@ class TelegramPollingBot:
     def _send_price_picker(self, chat_id: int, text: str, choices, query: str, message_thread_id: int | None = None) -> None:
         """Send inline keyboard with product choices for price disambiguation."""
         buttons = []
-        for i, choice in enumerate(choices[:6]):
+        for choice in choices[:6]:
             picker_id = uuid.uuid4().hex[:8]
             self.pending_conflicts[picker_id] = ("price_pick", choice)
             label = f"{choice.item_name} \u2014 \u20aa{choice.price:.2f}"

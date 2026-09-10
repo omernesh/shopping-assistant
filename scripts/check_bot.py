@@ -1,6 +1,6 @@
-from src.config.settings import load_settings
 from src.app.router import ShoppingAssistantRouter
 from src.channels.telegram_polling import TelegramPollingBot
+from src.config.settings import load_settings
 from src.storage.sqlite_store import SQLiteStore
 
 settings = load_settings()
