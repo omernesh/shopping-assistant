@@ -203,10 +203,13 @@ Register the bot as an OpenClaw skill by pointing to the tool contract:
 The `hermes-skill/` directory contains a ready-to-use Hermes Agent skill:
 
 - `SKILL.md` -- Identity, behavioral rules, tool policy
+- `shopping_backend.py` -- Integration script (actions: add/show/done/delete/price/total/compare; flags: `--chat`, `--user`, `--uid`)
 - `references/identity.md` -- Identity reference
 - `references/tool-contract.md` -- Allowed actions and execution contract
 
 Copy the `hermes-skill/` directory into your Hermes skills path and configure the skill in your Hermes config.
+
+Supports Telegram groups and WhatsApp groups (via the chatlytics platform): `tg:` / `wa:` chat keys, per-sender attribution, and cross-platform shared lists via `shared_lists.json`.
 
 ## Tests
 
